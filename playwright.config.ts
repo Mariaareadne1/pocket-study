@@ -16,7 +16,8 @@ export default defineConfig({
   use: {
     baseURL: BASE,
     viewport: { width: 1280, height: 800 },
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
     launchOptions: {
       args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
     },
