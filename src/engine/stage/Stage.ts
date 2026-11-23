@@ -59,6 +59,13 @@ export interface StageOptions {
   maxDpr?: number;
 }
 
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export type StageTarget = 'slot' | 'switch' | 'body' | 'screen' | 'approach' | Action | `cart:${CartId}`;
 
 type Gesture =
@@ -95,6 +102,8 @@ export class Stage {
   private homing = false;
   private idle = 0;
   private focus: [number, number] = [0, 0];
+  /** Portrait only: eases the camera out while a cartridge is in hand, so the slot clears the page card. */
+  private hold: [number, number] = [0, 0];
   private portrait = false;
   private size = { w: 1, h: 1 };
   private readonly handlers: StageHandlers;
@@ -203,7 +212,13 @@ export class Stage {
   screenOf(target: StageTarget): { x: number; y: number } {
     const v = new THREE.Vector3();
     const dev = this.asm.rig('device').matrixWorld;
-    if (target.startsWith('cart:')) v.copy(this.poser.cartPose(target.slice(5) as CartId).p);
+    if (target.startsWith('cart:')) {
+      // A seated cartridge is mostly inside the shell: aim at the part that stands above the slot.
+      const id = target.slice(5) as CartId;
+      const c = this.poser.cartPose(id);
+      const seated = this.handlers.frame().device.cart === id;
+      v.set(0, seated ? CART.hh - 6 : 0, 0).applyQuaternion(c.q).add(c.p);
+    }
     else if (target === 'approach') v.copy(this.poser.approach.p);
     else if (target === 'slot') v.set(0, BODY.hh + 6, 0).applyMatrix4(dev);
     else if (target === 'switch') v.set((SWITCH.off + SWITCH.on) / 2, BODY.hh + 2, SWITCH.z).applyMatrix4(dev);
@@ -350,11 +365,16 @@ export class Stage {
     const on = device.power !== 'off' && !device.dragging ? 1 : 0;
     [this.focus[0], this.focus[1]] = spring(this.focus[0], this.focus[1], on, this.reduced ? 8 : 2.2, dt);
     const k = this.focus[0];
+    const holding = this.portrait && device.power === 'off' && (device.selected !== null || device.dragging !== null) ? 1 : 0;
+    [this.hold[0], this.hold[1]] = spring(this.hold[0], this.hold[1], holding, this.reduced ? 8 : 3, dt);
     const aspect = this.size.w / this.size.h;
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
     const fit = (w: number, h: number): number => Math.max(h / 0.8 / 2 / tanHalf, w / 0.88 / 2 / (tanHalf * aspect));
-    const wide = this.portrait ? { x: 0, y: -34, w: 186, h: 246 } : { x: 50, y: -6, w: 318, h: 204 };
-    const close = this.portrait ? { x: 0, y: 6, w: 112, h: 172 } : { x: 0, y: 6, w: 120, h: 176 };
+    // Portrait framings keep the top of the object (switch, slot, a cartridge on its way in) below the
+    // page card, which covers roughly the top fifth of a phone screen.
+    const lerpBox = (a: Box, b: Box, t: number): Box => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, w: a.w + (b.w - a.w) * t, h: a.h + (b.h - a.h) * t });
+    const wide = this.portrait ? lerpBox({ x: 0, y: -8, w: 186, h: 300 }, { x: 0, y: 24, w: 186, h: 344 }, this.hold[0]) : { x: 50, y: 4, w: 318, h: 236 };
+    const close = this.portrait ? { x: 0, y: 24, w: 112, h: 220 } : { x: 0, y: 6, w: 120, h: 176 };
     const dist = THREE.MathUtils.lerp(fit(wide.w, wide.h), fit(close.w, close.h), k);
     const tx = THREE.MathUtils.lerp(wide.x, close.x, k);
     const ty = THREE.MathUtils.lerp(wide.y, close.y, k);
