@@ -1,0 +1,11 @@
+node_modules
+.next
+.next-build
+artifacts
+test-results
+playwright-report
+demo
+docs/media
+tests
+*.log
+.env*

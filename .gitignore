@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+artifacts/
+demo/frames/
+*.log
+.DS_Store
+.env*
+.vercel
+next-env.d.ts
+tsconfig.tsbuildinfo
+.next-build/
