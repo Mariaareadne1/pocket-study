@@ -6,9 +6,9 @@ Each milestone is tested, committed and pushed before the next one starts.
 | --- | --- | --- | --- |
 | 0 | Source audit, scaffold, runtime + games logic | done | `docs/SOURCE_AUDIT.md`; `npm test`: 59 unit tests pass; typecheck + lint clean |
 | 1 | Transparent handheld rendering | done | `scripts/shoot.mjs` renders hero/side/back/top in headless Metal Chrome; typecheck + lint + 59 unit tests |
-| 2 | Cartridges, power, buttons, drag-to-insert | pending | |
-| 3 | Screen in 3D, input wiring, games on device | pending | |
-| 4 | UI, mobile, accessibility, E2E | pending | |
+| 2 | Cartridges, power, buttons, drag-to-insert | done | E2E journey (real mouse drag, 3D switch, blocked actions) |
+| 3 | Screen in 3D, input wiring, games on device | done | `shoot.mjs` stills of all three games on the LCD; E2E keyboard + 3D D-pad |
+| 4 | UI, mobile, accessibility, E2E | done | `npm run test:e2e`: 3 tests (see log for run history); 390×844 stills |
 | 5 | Demo films + media | pending | |
 | 6 | Docs, deploy, handoff | pending | |
 
@@ -38,3 +38,20 @@ Each milestone is tested, committed and pushed before the next one starts.
   backlight and a cover-glass reflection.
 - Three opaque cartridges with labels drawn from each game's own pixel art.
 - Bloom status bar: one-pixel gap between its two text rows (they merged at on-device scale).
+
+### Milestones 2–4 — 2026-11-23
+
+- Controller: every input source (3D pointer, `key:<code>`, `touch:<action>`, gamepad) feeds one hub under its
+  own id; blur/hidden releases all and pauses. Escape pauses; text fields are ignored.
+- Cartridges: click to select (it lifts and a ghost outline appears over the slot), drag toward the slot (it turns
+  to align and snaps within range), or click again / **Insert**. Second cartridge and eject-while-on are refused
+  with a toast; the dragged cartridge springs back. Eject after power off slides it back to the tray.
+- Power switch in 3D (or **Power on**): boot screen + chime, then the cartridge's title; nothing is drawn while off.
+- HUD: kicker, title, state hint (`aria-live`), cartridge card, tray chips, Sound / Reset view / Photo / Credits;
+  touch pad on coarse pointers while on; Credits with a two-step Clear Data; WebGL failure screen with retry.
+- Phone (390×844): card on top, tray below; while on, the tray steps out of view.
+- Fix found by the E2E test: taps of the same button inside one slow frame merged into one press; they are now
+  queued (max 4) and delivered one per update (unit tests added).
+- E2E run history on this machine: the journey test passed in 3 of 4 final runs; the failing run's in-page log shows
+  every action took effect (power off 1 s after the click) while the headless renderer stalled for minutes — an
+  environment stall, recorded rather than retried away. Unit: 61 tests pass.
