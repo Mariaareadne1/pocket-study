@@ -21,6 +21,9 @@ export type InputListener = (action: Action, down: boolean) => void;
 
 export const EMPTY_FRAME: PadFrame = { held: new Set(), pressed: new Set() };
 
+/** Taps queued between polls beyond this are dropped, so a long stall never replays a burst of input. */
+const MAX_QUEUED_PRESSES = 4;
+
 export class InputHub {
   private readonly holds = new Map<string, Set<Action>>();
   private readonly pressCount = new Map<Action, number>();
@@ -53,7 +56,7 @@ export class InputHub {
     const wasHeld = this.isHeld(action);
     set.add(action);
     if (!wasHeld) {
-      this.pressCount.set(action, (this.pressCount.get(action) ?? 0) + 1);
+      this.pressCount.set(action, Math.min((this.pressCount.get(action) ?? 0) + 1, MAX_QUEUED_PRESSES));
       for (const l of this.listeners) l(action, true);
     }
   }
@@ -83,10 +86,15 @@ export class InputHub {
     this.pressCount.clear();
   }
 
+  /** One press edge per action per poll; quicker taps wait for the following polls instead of merging. */
   poll(): PadFrame {
     const pressed = new Set<Action>();
-    for (const [a, n] of this.pressCount) if (n > 0) pressed.add(a);
-    this.pressCount.clear();
+    for (const [a, n] of this.pressCount) {
+      if (n <= 0) continue;
+      pressed.add(a);
+      if (n > 1) this.pressCount.set(a, n - 1);
+      else this.pressCount.delete(a);
+    }
     const held = this.heldSet;
     for (const a of pressed) held.add(a);
     return { held, pressed };

@@ -35,6 +35,27 @@ describe('input hub', () => {
     expect(hub.poll().pressed.size).toBe(0);
   });
 
+  it('several taps between two polls are each delivered, one per poll', () => {
+    const hub = new InputHub();
+    for (let i = 0; i < 3; i++) {
+      hub.press('kbd', 'down');
+      hub.release('kbd', 'down');
+    }
+    const seen = [hub.poll(), hub.poll(), hub.poll(), hub.poll()].map((f) => f.pressed.has('down'));
+    expect(seen).toEqual([true, true, true, false]);
+  });
+
+  it('a flood of queued taps is capped so a stall does not replay seconds of input', () => {
+    const hub = new InputHub();
+    for (let i = 0; i < 20; i++) {
+      hub.press('kbd', 'a');
+      hub.release('kbd', 'a');
+    }
+    let n = 0;
+    while (hub.poll().pressed.has('a')) n++;
+    expect(n).toBe(4);
+  });
+
   it('press and hold produces one press edge', () => {
     const hub = new InputHub();
     hub.press('kbd', 'right');
