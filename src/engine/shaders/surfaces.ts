@@ -1,6 +1,6 @@
 /**
- * Opaque materials for Cassette Study, written against the same camera-fixed studio as the
- * reference rods so metal, rubber, paper and tape all reflect the same softboxes and flags.
+ * Opaque materials for Pocket Study, written against the same camera-fixed studio as the
+ * reference rods so metal, moulded plastic, PCB and paper all reflect the same softboxes and flags.
  *
  * Alpha conventions follow the reference pipeline: 0 = backdrop, ≥1 = matter (fully visible through
  * refraction), values above 2 mark sparkle that the post pass turns into small stars.
@@ -45,7 +45,8 @@ export const SURFACE_FRAG = `
   uniform float uSpark;
   uniform float uCoat;
   uniform sampler2D uMap;
-  uniform int uMapMode;      // 0 none, 1 albedo (labels), 2 engraved ink on metal
+  uniform int uMapMode;      // 0 none, 1 albedo (labels), 2 engraved ink on metal, 3 packed two-sided board
+  uniform sampler2D uMask;   // mode 3: metalness (white = exposed copper/gold)
   uniform vec4 uMapRect;     // local xy → uv: (x0, y0, 1/w, 1/h); used when uMapMode == 2
   uniform vec3 uInk;
   uniform float uGrain;
@@ -78,6 +79,14 @@ export const SURFACE_FRAG = `
       vec2 uv = (vLocal.xy - uMapRect.xy) * uMapRect.zw;
       float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
       ink = texture2D(uMap, uv).a * inside;
+    } else if (uMapMode == 3) {
+      // Front half of the atlas for +Z faces, back half for −Z faces.
+      vec2 uv = clamp((vLocal.xy - uMapRect.xy) * uMapRect.zw, 0.0, 1.0);
+      uv.x = uv.x * 0.5 + (vLocal.z < 0.0 ? 0.5 : 0.0);
+      albedo = texture2D(uMap, uv).rgb;
+      float m = texture2D(uMask, uv).r;
+      metal = mix(metal, 1.0, m);
+      rough = mix(rough, 0.22, m);
     }
 
     // Fine grain: brushed metal streaks, paper tooth, moulded plastic.
@@ -117,55 +126,6 @@ export const SURFACE_FRAG = `
 
     float spark = uSpark * env.a * dot(F, vec3(0.3333)) * (1.0 - rough) * (1.0 - ink);
     gl_FragColor = vec4(col, 2.0 + spark);
-  }
-`;
-
-/** Wound tape: the pack radius is a uniform so transport can resize it every frame. */
-export const PACK_VERT = `
-  attribute float aOuter;
-  uniform float uRadius;
-  uniform float uHub;
-  varying vec3 vP;
-  varying vec3 vN;
-  varying float vRad;
-  varying float vRim;
-  void main() {
-    vec2 dir = normalize(position.xy + vec2(1e-6, 0.0));
-    float r = mix(uHub, uRadius, aOuter);
-    vec3 p = vec3(dir * r, position.z);
-    vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    vP = mv.xyz;
-    vN = normalize(normalMatrix * normal);
-    vRad = r;
-    vRim = abs(normal.z) < 0.5 ? 1.0 : 0.0;
-    gl_Position = projectionMatrix * mv;
-  }
-`;
-
-export const PACK_FRAG = `
-  uniform samplerCube uRoom;
-  uniform float uRadius;
-  varying vec3 vP;
-  varying vec3 vN;
-  varying float vRad;
-  varying float vRim;
-  ${STUDIO}
-  ${LIGHTS}
-  void main() {
-    vec3 N = normalize(vN);
-    vec3 V = normalize(-vP);
-    if (dot(N, V) < 0.0) N = -N;
-    float cosv = max(dot(N, V), 0.0);
-    vec3 R = reflect(-V, N);
-    // Concentric winding lines and the slightly lighter, glossier edge of each wrap.
-    float rings = 0.5 + 0.5 * sin(vRad * 71.0) * sin(vRad * 13.7 + 1.3);
-    float edge = smoothstep(uRadius - 0.7, uRadius - 0.05, vRad);
-    vec3 base = mix(vec3(0.050, 0.034, 0.026), vec3(0.078, 0.055, 0.040), rings * 0.6 + edge * 0.4);
-    float rough = mix(0.32, 0.22, vRim);
-    vec3 env = envAt(uRoom, R, rough * 7.5).rgb;
-    float F = 0.045 + 0.955 * pow(1.0 - cosv, 5.0);
-    vec3 col = base * lights(N) + env * F * (0.55 + 0.45 * rings);
-    gl_FragColor = vec4(col, 2.0);
   }
 `;
 
@@ -217,14 +177,15 @@ export const BACKDROP_VERT = `
 `;
 
 /**
- * White sweep with analytic soft shadows of three rounded boxes (body, door, loose cassette), each
- * evaluated in its own local frame like the reference jewel-case shadows.
+ * White sweep with analytic soft shadows of four rounded boxes (the handheld and three cartridges),
+ * each evaluated in its own local frame like the reference jewel-case shadows.
  */
+export const SHADOW_BOXES = 4;
 export const BACKDROP_FRAG = `
   uniform vec3 uLight;
-  uniform mat4 uInv[3];
-  uniform vec4 uBox[3];      // half-width, half-height, corner radius, darkness
-  uniform vec2 uZ[3];        // shadow plane z in local space, extra softness
+  uniform mat4 uInv[4];
+  uniform vec4 uBox[4];      // half-width, half-height, corner radius, darkness
+  uniform vec2 uZ[4];        // shadow plane z in local space, extra softness
   uniform vec3 uCentre;
   uniform float uScale;
   varying vec3 vWorld;
@@ -251,7 +212,7 @@ export const BACKDROP_FRAG = `
 
   void main() {
     float lit = 1.0;
-    for (int i = 0; i < 3; i++) lit *= shade(uInv[i], uBox[i], uZ[i]);
+    for (int i = 0; i < 4; i++) lit *= shade(uInv[i], uBox[i], uZ[i]);
     float r = length((vWorld.xy - uCentre.xy) / (520.0 * uScale));
     vec3 paper = mix(vec3(1.0), vec3(0.935, 0.928, 0.915), smoothstep(0.15, 1.25, r));
     gl_FragColor = vec4(paper * lit, 0.0);

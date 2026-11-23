@@ -4,7 +4,8 @@
  */
 import * as THREE from 'three';
 import { ROD_FRAG, ROD_VERT, SHEET_FRAG, SHEET_VERT } from './shaders/studio';
-import { DECAL_FRAG, DECAL_VERT, PACK_FRAG, PACK_VERT, SURFACE_FRAG, SURFACE_VERT } from './shaders/surfaces';
+import { SCREEN_FRAG, SCREEN_VERT } from './shaders/screen';
+import { DECAL_FRAG, DECAL_VERT, SURFACE_FRAG, SURFACE_VERT } from './shaders/surfaces';
 
 export interface SurfaceSpec {
   color: [number, number, number];
@@ -15,7 +16,8 @@ export interface SurfaceSpec {
   coat?: number;
   grain?: number;
   map?: THREE.Texture | null;
-  mapMode?: 0 | 1 | 2;
+  mapMode?: 0 | 1 | 2 | 3;
+  mask?: THREE.Texture | null;
   mapRect?: [number, number, number, number];
   ink?: [number, number, number];
   brushAxis?: [number, number, number];
@@ -27,17 +29,10 @@ export const PRESET = {
   satin: { color: [0.86, 0.87, 0.89], metal: 1, rough: 0.24, brush: 0.18, spark: 0.5, grain: 0.18 },
   brushed: { color: [0.8, 0.81, 0.83], metal: 1, rough: 0.3, brush: 0.32, spark: 0.35, grain: 0.3 },
   platinum: { color: [0.9, 0.89, 0.87], metal: 1, rough: 0.14, spark: 0.7 },
-  icy: { color: [0.66, 0.8, 0.92], metal: 1, rough: 0.2, brush: 0.15, spark: 0.5 },
   keycap: { color: [0.86, 0.865, 0.875], metal: 0, rough: 0.3, coat: 0.45, grain: 0.08 },
-  icyCap: { color: [0.62, 0.76, 0.9], metal: 0, rough: 0.28, coat: 0.5, grain: 0.06 },
   rubber: { color: [0.022, 0.022, 0.024], metal: 0, rough: 0.62 },
-  ivory: { color: [0.86, 0.84, 0.78], metal: 0, rough: 0.34, coat: 0.25 },
-  felt: { color: [0.62, 0.55, 0.45], metal: 0, rough: 0.95 },
-  bronze: { color: [0.86, 0.66, 0.48], metal: 1, rough: 0.18, spark: 0.5 },
   darkSteel: { color: [0.36, 0.37, 0.4], metal: 1, rough: 0.3 },
-  tape: { color: [0.06, 0.042, 0.032], metal: 0, rough: 0.4 },
   paper: { color: [0.94, 0.93, 0.9], metal: 0, rough: 0.7, coat: 0.18 },
-  copper: { color: [0.93, 0.6, 0.45], metal: 1, rough: 0.22 },
 } satisfies Record<string, SurfaceSpec>;
 
 export class Materials {
@@ -68,6 +63,7 @@ export class Materials {
           uGrain: { value: spec.grain ?? 0 },
           uMap: { value: spec.map ?? null },
           uMapMode: { value: spec.mapMode ?? 0 },
+          uMask: { value: spec.mask ?? null },
           uMapRect: { value: new THREE.Vector4(...(spec.mapRect ?? [0, 0, 1, 1])) },
           uInk: { value: new THREE.Vector3(...(spec.ink ?? [0.05, 0.05, 0.06])) },
           uBrushAxis: { value: new THREE.Vector3(...(spec.brushAxis ?? [1, 0, 0])) },
@@ -78,12 +74,19 @@ export class Materials {
     );
   }
 
-  pack(hub: number): THREE.ShaderMaterial {
+  /** The LCD: samples the console framebuffer texture. */
+  screen(map: THREE.Texture, res: [number, number]): THREE.ShaderMaterial {
     return this.keep(
       new THREE.ShaderMaterial({
-        uniforms: { uRoom: { value: this.room }, uRadius: { value: hub }, uHub: { value: hub } },
-        vertexShader: PACK_VERT,
-        fragmentShader: PACK_FRAG,
+        uniforms: {
+          uScreen: { value: map },
+          uRoom: { value: this.room },
+          uRes: { value: new THREE.Vector2(...res) },
+          uBacklight: { value: 0 },
+          uGrid: { value: 1 },
+        },
+        vertexShader: SCREEN_VERT,
+        fragmentShader: SCREEN_FRAG,
       }),
     );
   }
@@ -128,10 +131,16 @@ export class Materials {
     );
   }
 
-  sheet(absorb: [number, number, number]): THREE.ShaderMaterial {
+  /** Thin clear panel. `haze` (per mm) mixes what's behind toward `tint`: the body colour of tinted plastic. */
+  sheet(absorb: [number, number, number], haze = 0, tint: [number, number, number] = [1, 1, 1]): THREE.ShaderMaterial {
     return this.keep(
       new THREE.ShaderMaterial({
-        uniforms: { uIor: { value: 1.59 }, uAbsorb: { value: new THREE.Vector3(...absorb) } },
+        uniforms: {
+          uIor: { value: 1.59 },
+          uAbsorb: { value: new THREE.Vector3(...absorb) },
+          uHaze: { value: haze },
+          uTint: { value: new THREE.Vector3(...tint) },
+        },
         vertexShader: SHEET_VERT,
         fragmentShader: SHEET_FRAG,
         transparent: true,

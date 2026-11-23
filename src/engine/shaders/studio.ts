@@ -325,6 +325,8 @@ export const SHEET_VERT = `
 export const SHEET_FRAG = `
   uniform float uIor;
   uniform vec3 uAbsorb;
+  uniform float uHaze;   // Pocket Study: coloured body tint per mm (0 = the reference's neutral sheet)
+  uniform vec3 uTint;
   varying vec3 vP;
   varying vec3 vN;
   varying float vThick;
@@ -340,11 +342,12 @@ export const SHEET_FRAG = `
     float Fall0 = F0 + (1.0 - F0) * (1.0 - F0) * F0;
     float cosT = sqrt(1.0 - (1.0 - cosv * cosv) / (uIor * uIor));
     float absorbed = 1.0 - exp(-dot(uAbsorb, vec3(0.3333)) * vThick / max(cosT, 0.2));
-    float takes = clamp(max(Fall - Fall0, 0.0) + Fall0 * 0.05 + absorbed * 0.5, 0.0, 1.0);
+    float haze = 1.0 - exp(-uHaze * vThick / max(cosT, 0.2));
+    float takes = clamp(max(Fall - Fall0, 0.0) + Fall0 * 0.05 + absorbed * 0.5 + haze, 0.0, 1.0);
     vec3 R = reflect(-V, N);
     vec3 refl = min(glare(R) * Fall * 0.25, vec3(0.1)) + min(room(R), vec3(1.2)) * max(Fall - Fall0, 0.0);
     vec3 tint = vec3(0.86, 0.9, 0.93) * (1.0 - cosv);
-    gl_FragColor = vec4(refl + tint * 0.03, takes);
+    gl_FragColor = vec4(refl + tint * 0.03 + uTint * haze, takes);
   }
 `;
 
@@ -435,7 +438,7 @@ export const FINAL_FRAG = `
     vec3 c = picture(vUv).rgb;
     vec3 stars = (texture2D(uStarA, vUv).rgb + texture2D(uStarB, vUv).rgb) * uStars;
     float k = clamp(dot(stars, vec3(0.3333)), 0.0, 1.0);
-    c = mix(c, vec3(0.62, 0.76, 1.0), k * 0.35) + stars * vec3(0.86, 0.93, 1.0) * 0.42;
+    c = mix(c, vec3(0.8, 0.74, 1.0), k * 0.3) + stars * vec3(0.95, 0.9, 1.0) * 0.42;
     gl_FragColor = vec4(toSRGB(c), 1.0);
   }
 `;
