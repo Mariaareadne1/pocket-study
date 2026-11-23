@@ -283,6 +283,7 @@ export class LittleSkyGame implements Game {
   inspect(): Record<string, unknown> {
     return {
       mode: this.mode,
+      menuItem: this.mode === 'menu' ? this.menu.current : null,
       tool: this.tool,
       cursor: [this.cx, this.cy],
       theme: this.sky.theme,

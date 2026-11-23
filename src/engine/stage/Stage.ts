@@ -335,10 +335,13 @@ export class Stage {
     const spots: Record<CartId, [number, number, number, number]> = this.portrait
       ? { bloom: [-58, -112, 4, 0.05], starfall: [0, -116, 6, -0.03], littlesky: [58, -112, 4, 0.04] }
       : { bloom: [98, 36, 4, 0.05], starfall: [158, 28, 2, -0.04], littlesky: [128, -38, 6, 0.035] };
+    // While the console is on the camera closes in; the tray steps aside (down in portrait, right in
+    // landscape) so the waiting cartridges don't crowd the screen or sit behind the page controls.
+    const aside = this.focus[0];
     for (const id of CART_IDS) {
       const [x, y, z, roll] = spots[id];
       const t = this.tray[id];
-      t.p.set(x, y, z);
+      t.p.set(this.portrait ? x : x + 70 * aside, this.portrait ? y - 80 * aside : y, z);
       t.q.setFromEuler(new THREE.Euler(-0.16, Math.PI - 0.12, roll, 'XYZ'));
     }
   }

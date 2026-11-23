@@ -192,10 +192,10 @@ export function drawHud(fb: Framebuffer, g: Garden): void {
     if (tool === 'seed') fb.sprite(packet(g.seed), x, y + 5);
     else fb.sprite(ICONS[tool], x + (tool === 'water' ? -1 : 1), y + 5);
   });
-  text(fb, TOOL_LABEL[g.tool], 58, y + 2, C.ink);
-  text(fb, g.tool === 'seed' ? SEED_LABEL[g.seed] : g.tool === 'water' ? 'SOIL' : 'PLANT', 58, y + 10, C.dim);
-  text(fb, 'B:TOOL', fb.width - 4, y + 2, C.dim, { align: 'right' });
-  text(fb, 'SEL:SEED', fb.width - 4, y + 10, C.dim, { align: 'right' });
+  text(fb, TOOL_LABEL[g.tool], 58, y + 1, C.ink);
+  text(fb, g.tool === 'seed' ? SEED_LABEL[g.seed] : g.tool === 'water' ? 'SOIL' : 'PLANT', 58, y + 11, C.dim);
+  text(fb, 'B:TOOL', fb.width - 4, y + 1, C.dim, { align: 'right' });
+  text(fb, 'SEL:SEED', fb.width - 4, y + 11, C.dim, { align: 'right' });
 }
 
 export interface Petal {
