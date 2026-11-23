@@ -1,0 +1,24 @@
+{
+  "landscape": {
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264",
+    "pix_fmt": "yuv420p",
+    "fps": "30/1",
+    "frames": 660,
+    "audio": "aac 48000 Hz",
+    "duration": 22,
+    "bytes": 4613779
+  },
+  "portrait": {
+    "width": 1080,
+    "height": 1920,
+    "codec": "h264",
+    "pix_fmt": "yuv420p",
+    "fps": "30/1",
+    "frames": 660,
+    "audio": "aac 48000 Hz",
+    "duration": 22,
+    "bytes": 7803978
+  }
+}
