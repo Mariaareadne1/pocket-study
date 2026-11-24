@@ -180,21 +180,35 @@ export class Pad {
   }
 }
 
-/** Keyboard mapping (event.code → action). */
+/**
+ * Keyboard mapping (event.code → action). The A and B keys press the A and B buttons (what the
+ * on-screen controls say); Z / Space and X are the classic alternatives, J and K for the right hand.
+ */
 export const KEY_MAP: Readonly<Record<string, Action>> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
   ArrowLeft: 'left',
   ArrowRight: 'right',
-  KeyW: 'up',
-  KeyS: 'down',
-  KeyA: 'left',
-  KeyD: 'right',
+  KeyA: 'a',
   KeyZ: 'a',
   KeyJ: 'a',
+  Space: 'a',
+  KeyB: 'b',
   KeyX: 'b',
   KeyK: 'b',
   Enter: 'start',
   ShiftLeft: 'select',
   ShiftRight: 'select',
+};
+
+/** Key names shown to the player for each button, primary first. */
+export const KEY_NAMES: Readonly<Record<Action, readonly string[]>> = {
+  up: ['↑'],
+  down: ['↓'],
+  left: ['←'],
+  right: ['→'],
+  a: ['A', 'Z', 'Space'],
+  b: ['B', 'X'],
+  start: ['Enter'],
+  select: ['Shift'],
 };
