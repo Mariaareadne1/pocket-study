@@ -69,6 +69,46 @@ gives a slow, tactile game that suits a glass object you turn over in your hands
   with the renderer.
 - Save: theme, elements, painted pixels. Autosaves on power off.
 
+## 04 · VINE — classic snake genre
+
+**Goal:** grow the longest vine you can.
+
+- A 20 × 16 grid of 8-px cells under the HUD. The vine moves one cell per tick: 0.16 s at first,
+  0.005 s faster per dewdrop, down to 0.075 s. Holding **A** hurries it (twice as fast).
+- The D-pad turns; a 180° reversal is ignored, and up to two quick turns are queued between ticks.
+- A dewdrop grows the vine by one and scores 10. Every fifth dewdrop also opens a blossom for 6 s
+  (50 points, grows two). Food never lands on the vine.
+- Running into the wall or the vine ends the run (moving into the cell the tail is leaving is fine).
+- Save: best score and runs played.
+
+## 05 · GLASSHOUSE — brick breaker
+
+**Goal:** break every coloured pane of the glasshouse roof.
+
+- Five original roofs (SEEDLING, GABLE, COLD FRAME, LATTICE, ORANGERY), up to 10 × 7 panes of 14 × 6 px.
+  Frosted panes take two hits; iron struts never break and don't count towards a clear. After the
+  fifth roof they repeat, 15 % faster.
+- A plank paddle (110 px/s, with a little acceleration). The pebble rests on it until **A**. The bounce
+  angle follows where it hits: straight up in the middle, 60° at the ends.
+- Pebble speed starts at 80 px/s, +1.6 per pane, capped at 130; it resets after a miss or a clear.
+  Movement is sub-stepped (≤ 1 px) so it never passes through a pane or the paddle.
+- 10 per pane, 25 per frosted pane, 100 per roof. Three lives. Save: best score and runs played.
+
+## 06 · RALLY — paddle duel
+
+**Goal:** first to seven points against the console.
+
+- You're on the left (95 px/s), the console on the right. The server holds the ball until **A** (the
+  console serves by itself after 0.8 s); after a point, the side that missed serves.
+- Returns angle by where the ball meets the paddle (55° at the ends) plus a little spin from the
+  paddle's motion. The ball starts at 70 px/s, gains 7 per return up to 150, and resets every point.
+- Difficulty (Select or left/right on the title, remembered): EASY, NORMAL, HARD change the console's
+  speed (52 / 60 / 74 px/s), reaction (0.32 / 0.25 / 0.17 s) and aim error (±13 / 11 / 9 px).
+- Save: wins, losses and difficulty.
+
+These three follow well-known genres. Their names, rules, numbers, art, layouts and sounds are original
+to this study; they don't copy any particular commercial game.
+
 ---
 
 ## Sound

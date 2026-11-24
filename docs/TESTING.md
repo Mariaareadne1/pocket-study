@@ -4,8 +4,8 @@
 | --- | --- | --- |
 | Types | `npm run typecheck` | strict TypeScript over `src`, `tests` |
 | Lint | `npm run lint` | ESLint (Next config) over `src`, `tests`, `scripts` |
-| Unit | `npm test` | 61 Vitest tests in Node, no browser |
-| End-to-end | `npm run test:e2e` | 3 Playwright tests in GPU Chrome (Metal on macOS) |
+| Unit | `npm test` | 112 Vitest tests in Node, no browser |
+| End-to-end | `npm run test:e2e` | 6 Playwright tests in GPU Chrome (Metal on macOS) |
 | Visual QA | `node scripts/shoot.mjs` | stills of states/angles in headless Chrome, plus `stage.debug()` dumps |
 | Films | `node scripts/film.mjs` + `node scripts/media.mjs` | demo films + ffprobe verification |
 
@@ -24,8 +24,34 @@ The runtime, device and games are plain TypeScript with no DOM, so they're teste
   completion once; movement, collision, lives, dash, hitboxes; placing, painting, undo), immutability,
   save → reload round trips, corrupt saves, pause freezing time, and Little Sky's PNG export — decoded with
   `pngjs` and compared pixel-for-pixel with the renderer at 160 × 128.
+- **vine** (17), **glasshouse** (14), **rally** (15): movement and timing, turn queueing, collisions,
+  sub-stepped ball physics (no tunnelling at top speed with a large step), scoring, lives and match end,
+  the console's difficulty levels (a corner shot EASY misses and HARD returns), food never on the vine,
+  level loops, determinism from a seed, immutability, saves and corrupt saves, pause freezing.
+- **recording** (5): recorder format choice (mp4 preferred, webm fallback), file names, durations.
+- **text-fit** (8): the console font is proportional, so every string each game draws is recorded while
+  seeded random button presses drive the game through title, play, menus, help pages, confirmations and
+  game over (4 seeds × 90 s per game). Every string must stay on the 160 × 144 screen, and text drawn
+  after a panel that starts inside it must end inside it. Also boot/no-cartridge screens and pixel-width
+  wrapping. This caught Starfall's "+50" pop-up running off the left edge.
+- **keys** (5): the keyboard map (A/Z/J/Space → A, B/X/K → B, Enter → Start, Shift → Select), turning
+  each cartridge's controls into key-guide rows, Escape folded into the pause row, the one-line hint.
 
-## End-to-end (`tests/e2e/journey.spec.ts`)
+## Demo options (`tests/e2e/demo-options.spec.ts`)
+
+1. **One cartridge** — `/?only=vine` leaves one chip on the tray and one cartridge in frame (the other five
+   project outside the viewport); choosing "All cartridges" in the real `<select>` brings all six back and
+   drops `only` from the URL; "Only Rally" updates the URL, the card shows Rally, and **Insert** inserts it
+   with no selection.
+2. **No cartridges** — choosing it empties the tray list, moves all six out of frame, titles the card
+   "The console" and centres the screen within 40 px of the middle; `?only=none` survives a reload and the
+   console still powers on with nothing inserted.
+3. **Bad value** — `/?only=nope` falls back to all six.
+4. **Key guide** — hidden while off; after Power on it lists ← ↑ ↓ →, A Z Space, Enter Esc for
+   Glasshouse; Enter starts the game, the hint reads "Arrows move · A launch · Enter/Esc pause", Escape
+   pauses; the **Keys** pill hides the guide and the choice survives a reload.
+
+## End-to-end journey (`tests/e2e/journey.spec.ts`)
 
 Every action is a real browser input event (`page.mouse`, `page.keyboard`, DOM button clicks). The page's
 `window.__pocket` hook is only read, to assert state.
@@ -41,12 +67,33 @@ Every action is a real browser input event (`page.mouse`, `page.keyboard`, DOM b
 3. **WebGL failure** — with WebGL disabled the page shows the failure message; **Try again** recovers once
    it's available.
 
+## Record demo (`tests/e2e/record.spec.ts`)
+
+Runs in full Chromium (the lightweight headless shell has no screen capture) with
+`--auto-accept-this-tab-capture`, so the "share this tab" prompt is accepted without a person.
+
+1. **Tab recording** — a real click on **Record demo**, the countdown, then the whole control is gone from
+   the page; Bloom is inserted and switched on with real clicks; **R** stops. The downloaded file is
+   checked with ffprobe, then frames sampled at 4 fps are scanned for the button's red dot where the
+   button sits: 0 pixels. The same detector finds it in a screenshot taken before recording (control).
+2. **Canvas recording** (`?rec=canvas`, the fallback for browsers without screen capture) — the Stop
+   button stays on screen and is absent from the film.
+3. **Cancel** — refusing the share prompt shows "Recording cancelled." and the button works again.
+
+A manual tab recording at 1280 × 720 came out as H.264 + AAC (`.mp4`), with Rally being played and no
+Record control in any frame.
+
 ### Results
 
 | Target | Result |
 | --- | --- |
-| dev server (`localhost:5580`) | 3 passed (1.6 min) |
-| production build (`localhost:4580`) | 3 passed (35 s) |
+| dev server (`localhost:5580`), plus the No cartridges option | 10 passed (1.3 min) |
+| dev server (`localhost:5580`), new font + key guide + one-cartridge mode | 9 passed (1.2 min) |
+| production build (`localhost:4580`), new font + key guide + one-cartridge mode | 9 passed (1.0 min) |
+| dev server (`localhost:5580`), with six cartridges and Record demo | 6 passed (56 s) |
+| dev server (`localhost:5580`), original three tests | 3 passed (1.6 min) |
+| production build (`localhost:4580`), six cartridges + Record demo | 6 passed (48 s) |
+| production build (`localhost:4580`), original three tests | 3 passed (35 s) |
 | live (`https://pocket-study.vercel.app`) | 3 passed (1.1 min) |
 
 **Honest note on flakiness.** On this machine the headless renderer occasionally stalls for seconds to
@@ -59,7 +106,7 @@ cartridge.
 
 ## Visual QA
 
-`node scripts/shoot.mjs [base] [outDir] --w=1440 --h=900 --shots=hero,side,back,top,selected,inserted,boot,bloom,starfall,littlesky`
+`node scripts/shoot.mjs [base] [outDir] --w=1440 --h=900 --shots=hero,side,back,top,selected,inserted,boot,bloom,starfall,littlesky,vine,glasshouse,rally`
 renders each state on the real app in capture mode and prints `stage.debug()` + `runtime.inspect()`.
 Checked at 1440 × 900, 1280 × 720, 540 × 960 and 390 × 844.
 

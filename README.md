@@ -17,15 +17,19 @@ play. Drag a cartridge into the slot, flick the power switch, and the game runs 
 [contact sheet](demo/contact-sheet.png) · [poster](demo/poster.png) · [stills](demo/screenshots) ·
 [GIF](demo/insert-and-boot.gif)
 
-## Three cartridges
+## Six cartridges
 
 | | | |
 | --- | --- | --- |
 | **01 Bloom** | a tiny garden | Plant, water and grow eight flowers. Growth only happens while the soil is damp. |
 | **02 Starfall** | arcade | Catch falling stars, dodge rocks, dash and pulse; your best score is kept. |
 | **03 Little Sky** | sky maker | Place stars, clouds, moons and birds, paint pixels, and export the sky as a PNG. |
+| **04 Vine** | classic snake | Steer a growing vine to the dewdrops; it gets longer and faster. |
+| **05 Glasshouse** | brick breaker | Bounce a pebble off a plank and break the coloured panes of five glasshouse roofs. |
+| **06 Rally** | paddle duel | A table game against the console, on three difficulties; first to seven. |
 
-Each has its own label, title screen, pause menu, save and reset, and sound. Rules are in
+The last three are original takes on classic genres — familiar rules, but their own names, art and
+levels. Each has its own label, title screen, pause menu, save and reset, and sound. Rules are in
 [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md).
 
 ## Using it
@@ -39,11 +43,26 @@ Each has its own label, title screen, pause menu, save and reset, and sound. Rul
 | Key | | Key | |
 | --- | --- | --- | --- |
 | Arrows | D-pad | Enter | Start |
-| Z or J | A | Shift | Select |
-| X or K | B | Esc | pause |
+| A, Z, J or Space | A | Shift | Select |
+| B, X or K | B | Esc | pause |
+
+  While a game is running, a **key guide** beside the console shows the keys for that game (for
+  example "Space · launch" in Glasshouse). The **Keys** pill at the top hides or shows it, and the hint
+  line under the heading says the same in one line.
 
 - On touch screens a large on-screen pad appears while the console is on. A standard gamepad also works.
-- **Photo** saves a PNG of the object. **Credits** has attribution and **Clear saved data…** (asks first).
+- **One cartridge at a time:** the menu next to Record demo ("All cartridges" / "Only Vine" …) leaves a
+  single cartridge in the scene, so a demo can focus on one game. **Insert** then needs no selection.
+  **No cartridges** clears them all away and centres the console on its own, for filming just the object.
+  The choice is kept in the address, so `/?only=rally` opens with only Rally and `/?only=none` with no
+  cartridges (ids: `bloom`, `starfall`, `littlesky`, `vine`, `glasshouse`, `rally`). The menu hides with
+  the Record button while recording.
+- **Record demo** (bottom of the page) films what you do, with the console's sound, and downloads an
+  `.mp4` (or `.webm`). In Chrome, Edge and Firefox it records this tab — choose "this tab" when asked.
+  Files are named `handheld-demo-<date>-<time>`. The button hides itself before the first recorded frame, so it never appears in the film; press **R** or
+  your browser's **Stop sharing** to finish. Browsers without screen capture (phones) record the 3D scene
+  instead, with an on-screen Stop button that isn't part of that recording.
+- **Photo** saves `handheld.png` of the object. **Credits** has attribution and **Clear saved data…** (asks first).
 - Drag empty space to turn the console; **Reset view** puts it back. Reduced motion is respected.
 
 ## Run it
@@ -60,8 +79,8 @@ Open <http://localhost:5580>. Production: `npm run build && npm start` (port 458
 
 | Script | |
 | --- | --- |
-| `npm test` | 61 unit tests (device machine, input, runtime, all three games, PNG export) |
-| `npm run test:e2e` | 3 Playwright tests in GPU Chrome with real pointer and keyboard input (`E2E_BASE_URL=…` to target a deployment) |
+| `npm test` | 125 unit tests (device machine, input, runtime, all six games, text fit on every screen, key guide, PNG export, recorder) |
+| `npm run test:e2e` | 10 Playwright tests in GPU Chrome with real pointer and keyboard input, including Record demo, one-cartridge mode and the key guide (`E2E_BASE_URL=…` to target a deployment) |
 | `npm run typecheck` · `npm run lint` | |
 | `node scripts/shoot.mjs` | visual QA stills of states and angles |
 | `node scripts/film.mjs --variant=landscape` | record a demo film (also `portrait`) |

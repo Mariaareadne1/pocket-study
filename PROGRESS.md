@@ -11,6 +11,8 @@ Each milestone is tested, committed and pushed before the next one starts.
 | 4 | UI, mobile, accessibility, E2E | done | `npm run test:e2e`: 3 tests (see log for run history); 390×844 stills |
 | 5 | Demo films + media | done | `demo/ffprobe.json`: both 22.00 s, h264 yuv420p 30 fps, AAC; poster, contact sheet, 12 stills, GIF |
 | 6 | Docs, deploy, handoff | done | https://pocket-study.vercel.app — E2E 3/3 against the live URL |
+| 7 | Three classic-genre cartridges + Record demo | done | 112 unit tests; E2E 6/6 on dev and production builds; recorded file checked with ffprobe and scanned for the button |
+| 8 | Unbranded console, pixel font, key guide, one-cartridge and no-cartridge demo modes | built, not committed | 125 unit tests (incl. text fit on every screen); E2E 10/10 on dev (9/9 on the production build before the no-cartridge option) |
 
 ## Log
 
@@ -73,3 +75,33 @@ Each milestone is tested, committed and pushed before the next one starts.
 - Docs: README, ARCHITECTURE, GAME_DESIGN, TESTING, CASE_STUDY (+ existing SOURCE_AUDIT, ATTRIBUTION), LICENSE.
 - `next build` clean. E2E 3/3 against the production build (35 s) and against the live deployment (1.1 min).
 - Deployed with the Vercel CLI: https://pocket-study.vercel.app (public, no Git integration).
+
+### Milestone 7 — 2026-11-24
+
+- Three more cartridges in classic genres, all original: 04 VINE (snake), 05 GLASSHOUSE (brick breaker),
+  06 RALLY (paddle duel). Six-cartridge tray: two columns beside the console in landscape, two stacked
+  rows below it in portrait; seven shadow boxes; labels drawn by each game's own renderer.
+- **Record demo** at the bottom of the page: records the tab (or the 3D canvas where screen capture
+  isn't available) with the console's sound, downloads `.mp4`/`.webm`, and removes itself from the page
+  before the first recorded frame.
+- Checks: typecheck + lint clean; 112 unit tests; E2E 6/6; QA stills at 1440 × 900, 1280 × 720,
+  540 × 960 and 390 × 844. `next build` clean; E2E 6/6 against the production build (48 s).
+  Not yet done: deploy, refreshed demo films (the committed films still show three cartridges).
+
+### Milestone 8 — 2026-11-24
+
+- The name is off the object and the page: the bezel reads "COLOUR LCD", labels and boot screen say
+  "OS-002", the heading is a screen-reader-only "Handheld console", and downloads are `handheld.png` /
+  `handheld-demo-<date>-<time>.mp4`. (Saved games keep their old storage keys so nothing is lost; the repo
+  and the live URL keep their names.)
+- New original pixel typeface for the console (bold, proportional, 7 px tall, fixed-width digits);
+  italic printed lettering on the shell and labels; a faint RGB sub-pixel stripe on the LCD. Help pages
+  line up as two columns; wrapping is by pixel width.
+- Keyboard: A/Z/J/Space = A, B/X/K = B, Enter = Start, Shift = Select, Esc = pause (WASD removed, so the
+  A key is the A button). A key guide beside the console shows the playing game's keys; **Keys** toggles it.
+- One-cartridge demo mode: "Only <title>" beside Record demo, or `?only=<id>`; the other cartridges slide
+  out of frame and off the tray list. It hides with the Record control while recording.
+- "No cartridges" (`?only=none`): every cartridge slides out and the camera centres the console alone.
+  On phones the Record row now sits on its own line above the view/sound buttons (they overlapped).
+- Checks: typecheck + lint clean; 125 unit tests; E2E 9/9 on the dev server and on the production build (1.0 min); `next build` clean.
+  Not yet done: commit, deploy, refreshed demo films and hero image (they show the old name and font).

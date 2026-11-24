@@ -65,7 +65,8 @@ All of the following were made for this study, in code:
 - the console runtime
 - the 5×7 pixel font
 - every sprite
-- the three games (BLOOM, STARFALL, LITTLE SKY)
+- the six games (BLOOM, STARFALL, LITTLE SKY, VINE, GLASSHOUSE, RALLY) — the last three are original
+  takes on classic genres (snake, brick breaker, paddle duel), with their own names, art, layouts and rules
 - the boot mark and chime
 - every sound effect, synthesised with Web Audio
 
