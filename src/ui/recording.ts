@@ -13,11 +13,14 @@ export interface RecordingResult {
   ext: 'mp4' | 'webm';
   seconds: number;
   mode: RecordMode;
+  /** False when the take was recorded without the console's sound (its audio wasn't running). */
+  sound: boolean;
 }
 
 export const MAX_SECONDS = 300;
 const VIDEO_BITS = 10_000_000;
-const CANVAS_FPS = 60;
+/** Frame rate of the scene recording (canvas mode). */
+export const CANVAS_FPS = 60;
 
 const MIME_PREFERENCE = [
   'video/mp4;codecs=avc1.640028,mp4a.40.2',
@@ -53,11 +56,34 @@ export function formatDuration(seconds: number): string {
   return `${Math.floor(s / 60)}:${two(s % 60)}`;
 }
 
+/** How long the audio clock is watched before a take, and the share of that time it must cover. */
+export const CLOCK_CHECK_MS = 300;
+const CLOCK_MIN_SHARE = 0.25;
+
+/**
+ * Whether an audio clock is really moving. A context can report "running" while its output
+ * device is stalled; its stream then carries no samples and the recorder waits on it, so the
+ * file stops after a second or so. Such takes are recorded without sound instead.
+ */
+export async function clockRuns(
+  read: () => number | null,
+  waitMs = CLOCK_CHECK_MS,
+  wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
+): Promise<boolean> {
+  const t0 = read();
+  if (t0 === null) return false;
+  await wait(waitMs);
+  const t1 = read();
+  return t1 !== null && t1 - t0 >= (waitMs / 1000) * CLOCK_MIN_SHARE;
+}
+
+export const canCaptureCanvas = (): boolean => typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function';
+
 /** Which source this browser supports; `forced` comes from `?rec=canvas|tab` (tests). */
 export function recordMode(forced: string | null): RecordMode | null {
   if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return null;
   const tab = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
-  const canvas = typeof HTMLCanvasElement.prototype.captureStream === 'function';
+  const canvas = canCaptureCanvas();
   if (forced === 'canvas' && canvas) return 'canvas';
   if (forced === 'tab' && tab) return 'tab';
   return tab ? 'tab' : canvas ? 'canvas' : null;
@@ -73,39 +99,59 @@ export async function requestTab(): Promise<MediaStream> {
     surfaceSwitching: 'exclude',
     monitorTypeSurfaces: 'exclude',
   } as DisplayMediaStreamOptions;
-  return navigator.mediaDevices.getDisplayMedia(opts);
+  const stream = await navigator.mediaDevices.getDisplayMedia(opts);
+  // Under load the browser may shrink the capture; an mp4 (avc1) recording stops if its size
+  // changes, so ask it to drop frames rather than resolution.
+  const track = stream.getVideoTracks()[0];
+  if (track) track.contentHint = 'detail';
+  return stream;
 }
 
-export function canvasStream(canvas: HTMLCanvasElement): MediaStream {
-  return canvas.captureStream(CANVAS_FPS);
+/** A refusal this quick can't be a person pressing Cancel: no share prompt was ever shown. */
+export const NO_PROMPT_MS = 600;
+
+/**
+ * True when tab capture was refused by the browser or the system rather than by the person: it's
+ * unsupported or blocked (embedded browsers, OS screen-recording permission, policy), or it was
+ * refused before a share prompt could have been answered. The recorder then films the 3D scene instead.
+ */
+export function captureBlocked(err: unknown, elapsedMs: number): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === 'NotSupportedError' || err.name === 'SecurityError' || err.name === 'InvalidStateError' || err.name === 'TypeError') return true;
+  if (err.name !== 'NotAllowedError') return false;
+  return elapsedMs < NO_PROMPT_MS || /system|policy|not allowed by the user agent/i.test(err.message);
 }
 
 /** Records one take. `onEnded` fires if the browser ends the capture (e.g. "Stop sharing"). */
 export class DemoRecorder {
-  private readonly rec: MediaRecorder;
+  private rec: MediaRecorder | null = null;
   private readonly chunks: Blob[] = [];
+  private readonly mime: string;
   private readonly ext: 'mp4' | 'webm';
+  private sound = false;
   private started = 0;
   private done: Promise<RecordingResult> | null = null;
 
   constructor(
     private readonly video: MediaStream,
-    audio: MediaStream | null,
     readonly mode: RecordMode,
     onEnded: () => void,
   ) {
     const picked = pickMime((m) => MediaRecorder.isTypeSupported(m));
     if (!picked) throw new Error('This browser can’t record video.');
+    this.mime = picked.mime;
     this.ext = picked.ext;
-    const tracks = [...video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])];
-    this.rec = new MediaRecorder(new MediaStream(tracks), { mimeType: picked.mime, videoBitsPerSecond: VIDEO_BITS, audioBitsPerSecond: 192_000 });
-    this.rec.ondataavailable = (e) => {
-      if (e.data.size > 0) this.chunks.push(e.data);
-    };
     video.getVideoTracks()[0]?.addEventListener('ended', onEnded, { once: true });
   }
 
-  start(): void {
+  /** Starts the take. The soundtrack is chosen only now, once the audio clock has been checked. */
+  start(audio: MediaStream | null): void {
+    const tracks = [...this.video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])];
+    this.sound = tracks.length > this.video.getVideoTracks().length;
+    this.rec = new MediaRecorder(new MediaStream(tracks), { mimeType: this.mime, videoBitsPerSecond: VIDEO_BITS, audioBitsPerSecond: 192_000 });
+    this.rec.ondataavailable = (e) => {
+      if (e.data.size > 0) this.chunks.push(e.data);
+    };
     this.started = performance.now();
     this.rec.start(1000);
   }
@@ -116,7 +162,8 @@ export class DemoRecorder {
 
   stop(): Promise<RecordingResult> {
     if (this.done) return this.done;
-    if (!this.started) {
+    const rec = this.rec;
+    if (!this.started || !rec) {
       // Sharing ended during the countdown: nothing was recorded.
       this.video.getTracks().forEach((t) => t.stop());
       this.done = Promise.reject(new DOMException('Stopped before recording began.', 'NotAllowedError'));
@@ -124,15 +171,15 @@ export class DemoRecorder {
     }
     const seconds = this.elapsed;
     this.done = new Promise<RecordingResult>((resolve, reject) => {
-      this.rec.onstop = () => {
+      rec.onstop = () => {
         this.video.getTracks().forEach((t) => t.stop());
-        const type = this.rec.mimeType || (this.ext === 'mp4' ? 'video/mp4' : 'video/webm');
+        const type = rec.mimeType || (this.ext === 'mp4' ? 'video/mp4' : 'video/webm');
         const blob = new Blob(this.chunks, { type: type.split(';')[0] });
         if (blob.size === 0) reject(new Error('The recording came out empty.'));
-        else resolve({ blob, ext: this.ext, seconds, mode: this.mode });
+        else resolve({ blob, ext: this.ext, seconds, mode: this.mode, sound: this.sound });
       };
-      if (this.rec.state === 'inactive') this.rec.onstop?.(new Event('stop'));
-      else this.rec.stop();
+      if (rec.state === 'inactive') rec.onstop?.(new Event('stop'));
+      else rec.stop();
     });
     return this.done;
   }

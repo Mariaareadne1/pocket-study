@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { demoFileName, formatDuration, pickMime } from '@/ui/recording';
+import { NO_PROMPT_MS, captureBlocked, clockRuns, demoFileName, formatDuration, pickMime } from '@/ui/recording';
 
 describe('demo recording helpers', () => {
   it('prefers mp4 when the browser can record it', () => {
@@ -31,5 +31,33 @@ describe('demo recording helpers', () => {
     expect(formatDuration(24.4)).toBe('0:24');
     expect(formatDuration(125)).toBe('2:05');
     expect(formatDuration(-3)).toBe('0:00');
+  });
+
+  it('tells a blocked tab capture from a person pressing Cancel', () => {
+    const denied = new DOMException('Permission denied', 'NotAllowedError');
+    // Refused before any prompt could be answered (embedded browsers): blocked.
+    expect(captureBlocked(denied, 148)).toBe(true);
+    // Refused after the prompt had been on screen: the person cancelled.
+    expect(captureBlocked(denied, NO_PROMPT_MS + 1500)).toBe(false);
+    // The OS or a policy refused it, however long it took.
+    expect(captureBlocked(new DOMException('Permission denied by system', 'NotAllowedError'), 4000)).toBe(true);
+    expect(captureBlocked(new DOMException('Not supported', 'NotSupportedError'), 4000)).toBe(true);
+    expect(captureBlocked(new DOMException('Aborted', 'AbortError'), 10)).toBe(false);
+    expect(captureBlocked('nope', 10)).toBe(false);
+  });
+});
+
+describe('clockRuns', () => {
+  const noWait = async (): Promise<void> => undefined;
+  it('is true when the audio clock covers the wait', async () => {
+    const times = [10, 10.3];
+    expect(await clockRuns(() => times.shift() ?? null, 300, noWait)).toBe(true);
+  });
+  it('is false when the clock barely moves (a stalled output device)', async () => {
+    const times = [10, 10.006];
+    expect(await clockRuns(() => times.shift() ?? null, 300, noWait)).toBe(false);
+  });
+  it('is false before audio has started', async () => {
+    expect(await clockRuns(() => null, 300, noWait)).toBe(false);
   });
 });

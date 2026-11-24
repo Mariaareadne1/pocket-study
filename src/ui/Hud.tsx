@@ -276,7 +276,7 @@ export function Hud({ engine }: Props) {
 
       {showKeys && d.cart && <KeyGuide cart={d.cart} />}
 
-      {!showTouch && <RecordDemo controller={controller} canvas={stage.canvas} onMessage={show} only={only} onOnly={setOnly} />}
+      {!showTouch && <RecordDemo controller={controller} stage={stage} onMessage={show} only={only} onOnly={setOnly} />}
 
       {toast && (
         <p key={toast.id} className="ps-toast" role="status">

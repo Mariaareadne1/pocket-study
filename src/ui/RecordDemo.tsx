@@ -2,15 +2,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PocketController } from '@/app/controller';
 import { CART_IDS } from '@/device/machine';
-import type { OnShow } from '@/engine/stage/Stage';
+import type { OnShow, Stage } from '@/engine/stage/Stage';
+import { PointerCompositor, watchPointer } from './pointer';
+import { RecordPointer } from './RecordPointer';
 import { CARTS } from '@/runtime/types';
-import { DemoRecorder, MAX_SECONDS, type RecordMode, canvasStream, demoFileName, formatDuration, recordMode, requestTab } from './recording';
+import {
+  CANVAS_FPS,
+  DemoRecorder,
+  MAX_SECONDS,
+  type RecordMode,
+  canCaptureCanvas,
+  captureBlocked,
+  clockRuns,
+  demoFileName,
+  formatDuration,
+  recordMode,
+  requestTab,
+} from './recording';
 
 type Phase = { kind: 'idle' } | { kind: 'asking' } | { kind: 'countdown'; n: number } | { kind: 'recording' } | { kind: 'saving' };
 
 interface Props {
   controller: PocketController;
-  canvas: HTMLCanvasElement;
+  stage: Stage;
   onMessage: (text: string) => void;
   /** The single cartridge on show, 'none' for the console alone, or null for all of them. */
   only: OnShow;
@@ -46,14 +60,33 @@ const message = (err: unknown): string => {
  * browser's own Stop sharing button. In canvas mode the Stop button stays visible: it is page UI,
  * which a canvas recording never contains.
  */
-export function RecordDemo({ controller, canvas, onMessage, only, onOnly }: Props) {
+export function RecordDemo({ controller, stage, onMessage, only, onOnly }: Props) {
   const [mode, setMode] = useState<RecordMode | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [elapsed, setElapsed] = useState(0);
   const rec = useRef<DemoRecorder | null>(null);
   const cancelled = useRef(false);
+  const comp = useRef<PointerCompositor | null>(null);
 
-  useEffect(() => setMode(recordMode(new URLSearchParams(window.location.search).get('rec'))), []);
+  /** The 3D scene with the pointer drawn in (canvas captures leave the cursor out). */
+  const sceneStream = (): MediaStream => {
+    const c = new PointerCompositor(stage.canvas);
+    comp.current = c;
+    stage.afterFrame = () => c.draw();
+    return c.out.captureStream(CANVAS_FPS);
+  };
+  const releaseScene = useCallback((): void => {
+    stage.holdResolution = false;
+    if (!comp.current) return;
+    stage.afterFrame = null;
+    comp.current.dispose();
+    comp.current = null;
+  }, [stage]);
+
+  useEffect(() => {
+    setMode(recordMode(new URLSearchParams(window.location.search).get('rec')));
+    watchPointer();
+  }, []);
 
   const finish = useCallback(async () => {
     const r = rec.current;
@@ -64,14 +97,15 @@ export function RecordDemo({ controller, canvas, onMessage, only, onOnly }: Prop
       const result = await r.stop();
       const name = demoFileName(new Date(), result.ext);
       saveBlob(result.blob, name);
-      onMessage(`Saved ${name} (${formatDuration(result.seconds)}).`);
+      onMessage(`Saved ${name} (${formatDuration(result.seconds)}).${result.sound ? '' : ' No sound: the browser’s audio wasn’t running.'}`);
     } catch (err) {
       onMessage(message(err));
     } finally {
       controller.audio.releaseRecording();
+      releaseScene();
       setPhase({ kind: 'idle' });
     }
-  }, [controller, onMessage]);
+  }, [controller, onMessage, releaseScene]);
 
   useEffect(() => {
     if (phase.kind !== 'recording') return;
@@ -92,6 +126,18 @@ export function RecordDemo({ controller, canvas, onMessage, only, onOnly }: Prop
     };
   }, [phase.kind, finish]);
 
+  // While recording, every word and control on the page is hidden so the film shows only the console.
+  // Set before the first recorded frame (start waits two frames after this commit).
+  useEffect(() => {
+    // A canvas recording never contains page UI, so the controls stay usable there.
+    if (phase.kind !== 'recording' || mode !== 'tab') return;
+    const root = document.documentElement;
+    root.dataset.recording = '';
+    return () => {
+      delete root.dataset.recording;
+    };
+  }, [phase.kind, mode]);
+
   useEffect(() => {
     cancelled.current = false; // React dev mode mounts twice; the first cleanup must not stick
     return () => {
@@ -99,47 +145,74 @@ export function RecordDemo({ controller, canvas, onMessage, only, onOnly }: Prop
       void rec.current?.stop().catch(() => undefined);
       rec.current = null;
       controller.audio.releaseRecording();
+      releaseScene();
     };
-  }, [controller]);
+  }, [controller, releaseScene]);
 
   const begin = async (): Promise<void> => {
     if (!mode) return;
     controller.unlockAudio();
     setPhase({ kind: 'asking' });
+    let source: RecordMode = mode;
     let video: MediaStream;
+    const asked = performance.now();
+    const notes: string[] = [];
     try {
       // getDisplayMedia must be called synchronously inside the click (user gesture).
-      video = mode === 'tab' ? await requestTab() : canvasStream(canvas);
+      video = mode === 'tab' ? await requestTab() : sceneStream();
     } catch (err) {
-      onMessage(message(err));
-      setPhase({ kind: 'idle' });
-      return;
+      // Blocked by the browser or system (not the person's Cancel): film the 3D scene instead,
+      // and go straight to that next time.
+      if (mode !== 'tab' || !captureBlocked(err, performance.now() - asked) || !canCaptureCanvas()) {
+        onMessage(message(err));
+        setPhase({ kind: 'idle' });
+        return;
+      }
+      source = 'canvas';
+      setMode('canvas');
+      video = sceneStream();
+      notes.push('This browser doesn’t allow tab capture, so it’s recording the console scene instead.');
     }
+    if (notes.length) onMessage(notes.join(' '));
     let recorder: DemoRecorder;
     try {
-      recorder = new DemoRecorder(video, controller.audio.recordingStream(), mode, () => void finish());
+      recorder = new DemoRecorder(video, source, () => void finish());
     } catch (err) {
       video.getTracks().forEach((t) => t.stop());
+      releaseScene();
       onMessage(message(err));
       setPhase({ kind: 'idle' });
       return;
     }
     rec.current = recorder;
+    // The audio clock is checked during the last second, right before the take: a context can run for
+    // a moment after it's created and then stall, and a stalled soundtrack cuts the film short.
+    let sound: Promise<boolean> | null = null;
     for (let n = COUNTDOWN; n > 0; n--) {
       setPhase({ kind: 'countdown', n });
+      if (n === 1) sound = clockRuns(() => controller.audio.contextTime);
       await sleep(1000);
-      if (cancelled.current || rec.current !== recorder) return;
+      if (cancelled.current || rec.current !== recorder) {
+        releaseScene();
+        return;
+      }
+    }
+    const withSound = await (sound ?? clockRuns(() => controller.audio.contextTime));
+    if (cancelled.current || rec.current !== recorder) {
+      releaseScene();
+      return;
     }
     setElapsed(0);
+    stage.holdResolution = true;
     setPhase({ kind: 'recording' });
     await nextFrames(); // the control is gone from the page before the first recorded frame
-    if (rec.current === recorder) recorder.start();
+    if (rec.current === recorder) recorder.start(withSound ? controller.audio.recordingStream() : null);
   };
 
   const tab = mode === 'tab';
 
   if (phase.kind === 'recording') {
-    if (tab) return null;
+    if (tab) return <RecordPointer />;
     return (
       <div className="ps-rec">
         <button type="button" className="ps-pill ps-pill-rec" onClick={() => void finish()}>
