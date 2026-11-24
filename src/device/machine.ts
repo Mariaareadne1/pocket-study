@@ -8,7 +8,7 @@
  * selected or being dragged). Every method returns a result; refused transitions emit a
  * `blocked` event with a reason instead of silently doing something physically impossible.
  */
-export const CART_IDS = ['bloom', 'starfall', 'littlesky'] as const;
+export const CART_IDS = ['bloom', 'starfall', 'littlesky', 'vine', 'glasshouse', 'rally'] as const;
 export type CartId = (typeof CART_IDS)[number];
 export const isCartId = (x: unknown): x is CartId => typeof x === 'string' && (CART_IDS as readonly string[]).includes(x);
 

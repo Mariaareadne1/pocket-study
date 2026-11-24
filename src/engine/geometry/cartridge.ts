@@ -19,6 +19,9 @@ export const CART_SHELL: Record<CartId, SurfaceSpec> = {
   bloom: { color: [0.86, 0.865, 0.875], metal: 0, rough: 0.42, coat: 0.3, grain: 0.05 },
   starfall: { color: [0.05, 0.052, 0.062], metal: 0, rough: 0.4, coat: 0.35, grain: 0.05 },
   littlesky: { color: [0.62, 0.66, 0.73], metal: 0, rough: 0.42, coat: 0.3, grain: 0.05 },
+  vine: { color: [0.36, 0.5, 0.36], metal: 0, rough: 0.44, coat: 0.3, grain: 0.05 },
+  glasshouse: { color: [0.9, 0.84, 0.7], metal: 0, rough: 0.42, coat: 0.3, grain: 0.05 },
+  rally: { color: [0.72, 0.36, 0.34], metal: 0, rough: 0.42, coat: 0.3, grain: 0.05 },
 };
 
 export interface CartPart {

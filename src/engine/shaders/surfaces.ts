@@ -177,15 +177,15 @@ export const BACKDROP_VERT = `
 `;
 
 /**
- * White sweep with analytic soft shadows of four rounded boxes (the handheld and three cartridges),
+ * White sweep with analytic soft shadows of seven rounded boxes (the handheld and six cartridges),
  * each evaluated in its own local frame like the reference jewel-case shadows.
  */
-export const SHADOW_BOXES = 4;
+export const SHADOW_BOXES = 7;
 export const BACKDROP_FRAG = `
   uniform vec3 uLight;
-  uniform mat4 uInv[4];
-  uniform vec4 uBox[4];      // half-width, half-height, corner radius, darkness
-  uniform vec2 uZ[4];        // shadow plane z in local space, extra softness
+  uniform mat4 uInv[${SHADOW_BOXES}];
+  uniform vec4 uBox[${SHADOW_BOXES}];      // half-width, half-height, corner radius, darkness
+  uniform vec2 uZ[${SHADOW_BOXES}];        // shadow plane z in local space, extra softness
   uniform vec3 uCentre;
   uniform float uScale;
   varying vec3 vWorld;
@@ -212,7 +212,7 @@ export const BACKDROP_FRAG = `
 
   void main() {
     float lit = 1.0;
-    for (int i = 0; i < 4; i++) lit *= shade(uInv[i], uBox[i], uZ[i]);
+    for (int i = 0; i < ${SHADOW_BOXES}; i++) lit *= shade(uInv[i], uBox[i], uZ[i]);
     float r = length((vWorld.xy - uCentre.xy) / (520.0 * uScale));
     vec3 paper = mix(vec3(1.0), vec3(0.935, 0.928, 0.915), smoothstep(0.15, 1.25, r));
     gl_FragColor = vec4(paper * lit, 0.0);

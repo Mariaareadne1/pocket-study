@@ -29,6 +29,9 @@ const SHOTS = {
   bloom: [...insert('bloom'), ...power, ['tap', 'start'], ['wait', 1.5], ['tap', 'a'], ['wait', 2]],
   starfall: [...insert('starfall'), ...power, ['tap', 'start'], ['wait', 1], ['tap', 'a'], ['wait', 3]],
   littlesky: [...insert('littlesky'), ...power, ['tap', 'start'], ['wait', 1], ['tap', 'a'], ['wait', 2]],
+  vine: [...insert('vine'), ...power, ['tap', 'start'], ['wait', 0.8], ['tap', 'down'], ['wait', 0.5], ['tap', 'right'], ['wait', 0.6]],
+  glasshouse: [...insert('glasshouse'), ...power, ['tap', 'start'], ['wait', 2], ['tap', 'a'], ['wait', 2.5]],
+  rally: [...insert('rally'), ...power, ['tap', 'start'], ['wait', 0.6], ['tap', 'a'], ['wait', 2.2]],
 };
 
 const browser = await chromium.launch({ args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });

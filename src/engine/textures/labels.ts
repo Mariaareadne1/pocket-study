@@ -9,6 +9,9 @@ import { drawGarden, drawSky } from '../../games/bloom/view';
 import { demoSky } from '../../games/littlesky/logic';
 import { renderSky } from '../../games/littlesky/view';
 import { newRun } from '../../games/starfall/logic';
+import { drawLabelArt as glasshouseArt } from '../../games/glasshouse/view';
+import { drawLabelArt as rallyArt } from '../../games/rally/view';
+import { drawLabelArt as vineArt } from '../../games/vine/view';
 import { drawBackdrop, drawObj, drawPlayer } from '../../games/starfall/view';
 import { Framebuffer } from '../../runtime/framebuffer';
 import { CARTS } from '../../runtime/types';
@@ -27,7 +30,12 @@ const STYLE: Record<CartId, LabelStyle> = {
   bloom: { paper: '#f3efe6', ink: '#2c3a2e', dim: '#7b8a74', accent: '#e58fa6', crop: [8, 6, 144, 117] },
   starfall: { paper: '#141a36', ink: '#ece8ff', dim: '#8f8fc4', accent: '#f4cf6b', crop: [0, 12, 160, 132] },
   littlesky: { paper: '#e9edf5', ink: '#2e3452', dim: '#7c84a8', accent: '#b39ae6', crop: [0, 0, 160, 128] },
+  vine: { paper: '#eef1e4', ink: '#24361f', dim: '#71836a', accent: '#7fb86a', crop: [0, 14, 160, 128] },
+  glasshouse: { paper: '#f6f0e2', ink: '#3b3226', dim: '#8d8170', accent: '#8cc7c1', crop: [0, 12, 160, 132] },
+  rally: { paper: '#f4ece9', ink: '#3a2324', dim: '#8f7470', accent: '#d9786f', crop: [0, 0, 160, 144] },
 };
+
+const LABEL_ART: Partial<Record<CartId, (fb: Framebuffer) => void>> = { vine: vineArt, glasshouse: glasshouseArt, rally: rallyArt };
 
 /** Renders the game's pixel art for a cartridge into a small canvas (1 px per screen pixel). */
 export function cartArt(id: CartId): HTMLCanvasElement {
@@ -49,9 +57,12 @@ export function cartArt(id: CartId): HTMLCanvasElement {
     ] as const;
     objs.forEach((o, i) => drawObj(fb, { id: i + 1, vx: 0, vy: 0, spin: i, ...o }, 3.1));
     drawPlayer(fb, { ...newRun(1).player, x: 74, y: 110 }, 3.1);
-  } else {
+  } else if (id === 'littlesky') {
     fb = new Framebuffer(160, 128);
     renderSky(fb, demoSky(), 4.2);
+  } else {
+    fb = new Framebuffer();
+    LABEL_ART[id]?.(fb);
   }
   const [x, y, w, h] = STYLE[id].crop;
   const c = document.createElement('canvas');
@@ -88,7 +99,7 @@ export function cartLabel(id: CartId, fonts: Fonts): HTMLCanvasElement {
   g.fillStyle = s.dim;
   g.font = `600 1.45px ${fonts.mono}`;
   tracked(g, `CARTRIDGE ${info.number}`, 2.4, 2.9, 0.34, 'left');
-  tracked(g, 'POCKET STUDY', w - 2.4, 2.9, 0.34, 'right');
+  tracked(g, 'OS-002', w - 2.4, 2.9, 0.34, 'right');
   // Art window.
   const art = cartArt(id);
   const ax = 2.4;
@@ -114,14 +125,14 @@ export function cartLabel(id: CartId, fonts: Fonts): HTMLCanvasElement {
   g.globalAlpha = 1;
   // Title.
   g.fillStyle = s.ink;
-  g.font = `500 4.6px ${fonts.serif}`;
-  tracked(g, info.title, 2.4, 28.0, 0.05, 'left');
+  g.font = `italic 800 4.2px ${fonts.sans}`;
+  tracked(g, info.title.toUpperCase(), 2.4, 28.0, 0.02, 'left');
   g.fillStyle = s.accent;
   g.fillRect(2.4, 30.9, 6, 0.4);
   g.fillStyle = s.dim;
   g.font = `600 1.3px ${fonts.mono}`;
   tracked(g, info.genre.toUpperCase(), w - 2.4, 28.4, 0.3, 'right');
-  tracked(g, 'PS-002 · 160 × 144', w - 2.4, 31.0, 0.3, 'right');
+  tracked(g, 'OS-002 · 160 × 144', w - 2.4, 31.0, 0.3, 'right');
   return c;
 }
 
@@ -139,10 +150,10 @@ export function cartStrip(id: CartId, fonts: Fonts): HTMLCanvasElement {
   g.font = `700 2.2px ${fonts.mono}`;
   tracked(g, info.number, 2.2, h / 2, 0.1, 'left');
   g.fillStyle = s.ink;
-  g.font = `500 3.6px ${fonts.serif}`;
-  tracked(g, info.title, 7.6, h / 2 + 0.2, 0.05, 'left');
+  g.font = `italic 800 3.2px ${fonts.sans}`;
+  tracked(g, info.title.toUpperCase(), 7.6, h / 2 + 0.2, 0.02, 'left');
   g.fillStyle = s.dim;
   g.font = `600 1.2px ${fonts.mono}`;
-  tracked(g, 'POCKET STUDY', w - 2.2, h / 2, 0.3, 'right');
+  tracked(g, info.genre.toUpperCase(), w - 2.2, h / 2, 0.3, 'right');
   return c;
 }

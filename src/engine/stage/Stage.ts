@@ -77,6 +77,14 @@ type Gesture =
 
 const DPAD_ACTIONS: readonly Action[] = ['up', 'down', 'left', 'right'];
 
+/** Which cartridges are on show: all (null), just one, or none (the console alone, for demos). */
+export type OnShow = CartId | 'none' | null;
+
+/** Tray spot for the single cartridge in demo mode: x, y, z, roll. */
+const SOLO_LANDSCAPE: [number, number, number, number] = [128, -4, 4, 0.04];
+const SOLO_PORTRAIT: [number, number, number, number] = [0, -122, 10, 0.03];
+const OUT_OF_FRAME = 1400;
+
 export class Stage {
   readonly canvas: HTMLCanvasElement;
   private readonly pipe: Pipeline;
@@ -111,11 +119,15 @@ export class Stage {
   private dprProbe = true;
   private readonly maxDpr: number;
   private readonly glassList: GlassGroup[] = [];
-  private readonly tray: Record<CartId, Pose> = { bloom: pose(), starfall: pose(), littlesky: pose() };
+  private readonly tray = Object.fromEntries(CART_IDS.map((id) => [id, pose()])) as Record<CartId, Pose>;
   private readonly drag = new THREE.Vector3();
   private hasDrag = false;
   private screenVersion = -1;
   private wasOn = false;
+  /** Demo mode: the one cartridge left on the tray, or none (the others wait out of frame). */
+  private only: OnShow = null;
+  /** Eases the camera onto the console alone when no cartridges are on show (0 → 1). */
+  private bare: [number, number] = [0, 0];
 
   constructor(container: HTMLElement, handlers: StageHandlers, opts: StageOptions) {
     this.handlers = handlers;
@@ -127,7 +139,7 @@ export class Stage {
     this.canvas.setAttribute('role', 'img');
     this.canvas.setAttribute(
       'aria-label',
-      'A clear lavender handheld console and three cartridges. Drag to turn the console, press its buttons, flick the power switch on the top edge, and drag a cartridge into the slot.',
+      'A clear lavender handheld console and six cartridges. Drag to turn the console, press its buttons, flick the power switch on the top edge, and drag a cartridge into the slot.',
     );
     container.appendChild(this.canvas);
     this.pipe = new Pipeline(this.canvas, opts.preserveBuffer);
@@ -194,6 +206,11 @@ export class Stage {
   advance(dt: number): void {
     this.handlers.tick?.(dt);
     this.renderFrame(dt);
+  }
+
+  /** Show one cartridge, none ('none') or all of them (null). A cartridge in use always stays. */
+  setOnly(id: OnShow): void {
+    this.only = id;
   }
 
   setOrbit(yaw: number, pitch: number): void {
@@ -347,16 +364,37 @@ export class Stage {
 
   /** Tray poses: the label (−Z) faces the viewer, each cartridge a little askew. */
   private placeTray(): void {
+    // Portrait: two rows of three below the console, the back row tucked behind the front one like a
+    // stack of cartridges (its titles stay visible). Landscape: two columns of three beside it.
     const spots: Record<CartId, [number, number, number, number]> = this.portrait
-      ? { bloom: [-58, -112, 4, 0.05], starfall: [0, -116, 6, -0.03], littlesky: [58, -112, 4, 0.04] }
-      : { bloom: [98, 36, 4, 0.05], starfall: [158, 28, 2, -0.04], littlesky: [128, -38, 6, 0.035] };
+      ? {
+          bloom: [-58, -106, 10, 0.05],
+          starfall: [0, -109, 12, -0.03],
+          littlesky: [58, -106, 10, 0.04],
+          vine: [-56, -150, 2, -0.03],
+          glasshouse: [2, -153, 0, 0.04],
+          rally: [60, -150, 2, -0.04],
+        }
+      : {
+          bloom: [100, 64, 4, 0.05],
+          starfall: [160, 58, 2, -0.04],
+          littlesky: [100, -2, 6, 0.035],
+          vine: [160, -8, 3, -0.03],
+          glasshouse: [100, -68, 5, 0.04],
+          rally: [160, -74, 3, -0.035],
+        };
     // While the console is on the camera closes in; the tray steps aside (down in portrait, right in
     // landscape) so the waiting cartridges don't crowd the screen or sit behind the page controls.
     const aside = this.focus[0];
+    const d = this.handlers.frame().device;
     for (const id of CART_IDS) {
-      const [x, y, z, roll] = spots[id];
+      const inUse = d.cart === id || d.selected === id || d.dragging === id;
+      const away = this.only !== null && id !== this.only && !inUse;
+      const [x, y, z, roll] = this.only === id ? (this.portrait ? SOLO_PORTRAIT : SOLO_LANDSCAPE) : spots[id];
       const t = this.tray[id];
-      t.p.set(this.portrait ? x : x + 70 * aside, this.portrait ? y - 80 * aside : y, z);
+      // Hidden cartridges slide well out of frame (right in landscape, down in portrait).
+      const off = away ? OUT_OF_FRAME : 0;
+      t.p.set(this.portrait ? x : x + 150 * aside + off, this.portrait ? y - 80 * aside - off : y, z);
       t.q.setFromEuler(new THREE.Euler(-0.16, Math.PI - 0.12, roll, 'XYZ'));
     }
   }
@@ -373,7 +411,11 @@ export class Stage {
     // Portrait framings keep the top of the object (switch, slot, a cartridge on its way in) below the
     // page card, which covers roughly the top fifth of a phone screen.
     const lerpBox = (a: Box, b: Box, t: number): Box => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, w: a.w + (b.w - a.w) * t, h: a.h + (b.h - a.h) * t });
-    const wide = this.portrait ? lerpBox({ x: 0, y: -8, w: 186, h: 300 }, { x: 0, y: 24, w: 186, h: 344 }, this.hold[0]) : { x: 50, y: 4, w: 318, h: 236 };
+    [this.bare[0], this.bare[1]] = spring(this.bare[0], this.bare[1], this.only === 'none' ? 1 : 0, this.reduced ? 8 : 3, dt);
+    const tray = this.portrait ? lerpBox({ x: 0, y: -22, w: 186, h: 324 }, { x: 0, y: 12, w: 186, h: 356 }, this.hold[0]) : { x: 52, y: 0, w: 322, h: 244 };
+    // With no cartridges on show the console sits alone in the middle of the frame.
+    const alone = this.portrait ? { x: 0, y: 12, w: 186, h: 300 } : { x: 0, y: 0, w: 200, h: 244 };
+    const wide = lerpBox(tray, alone, this.bare[0]);
     const close = this.portrait ? { x: 0, y: 24, w: 112, h: 220 } : { x: 0, y: 6, w: 120, h: 176 };
     const dist = THREE.MathUtils.lerp(fit(wide.w, wide.h), fit(close.w, close.h), k);
     const tx = THREE.MathUtils.lerp(wide.x, close.x, k);

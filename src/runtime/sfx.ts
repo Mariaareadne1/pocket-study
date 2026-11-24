@@ -46,7 +46,18 @@ export type SfxName =
   | 'erase'
   | 'undo'
   | 'shutter'
-  | 'clear';
+  | 'clear'
+  // vine
+  | 'gulp'
+  | 'bonus'
+  // glasshouse + rally
+  | 'bounce'
+  | 'paddle'
+  | 'pane'
+  | 'crack'
+  | 'miss'
+  | 'point'
+  | 'win';
 
 export const SFX_NAMES: readonly SfxName[] = [
   'press', 'release', 'switchOn', 'switchOff', 'slide', 'seat', 'eject', 'deny', 'boot', 'nocart', 'powerDown',
@@ -54,6 +65,7 @@ export const SFX_NAMES: readonly SfxName[] = [
   'plant', 'water', 'grow', 'bloom', 'dig', 'tool', 'celebrate',
   'star', 'bigStar', 'hit', 'dash', 'pulse', 'level', 'gameOver',
   'place', 'puff', 'chirp', 'glow', 'brush', 'erase', 'undo', 'shutter', 'clear',
+  'gulp', 'bonus', 'bounce', 'paddle', 'pane', 'crack', 'miss', 'point', 'win',
 ];
 
 /** Hardware sounds belong to the object; the rest come out of the speaker and stop on power-off. */
@@ -244,5 +256,24 @@ export function playSfx(ctx: BaseAudioContext, out: AudioNode, name: SfxName, t:
       return click(ctx, out, t + 0.07, 1800, 0.16);
     case 'clear':
       return tone(ctx, out, t, { type: 'triangle', f: 1200, f1: 300, dur: 0.3, gain: 0.05, glide: 0.28 });
+    case 'gulp':
+      return tone(ctx, out, t, { type: 'square', f: 520, f1: 1040, dur: 0.06, gain: 0.035, glide: 0.05 });
+    case 'bonus':
+      return notes(ctx, out, t, [1318.5, 1568, 2093], 0.05, { type: 'square', dur: 0.07, gain: 0.03 });
+    case 'bounce':
+      return tone(ctx, out, t, { type: 'square', f: 440, dur: 0.025, gain: 0.03 });
+    case 'paddle':
+      return tone(ctx, out, t, { type: 'square', f: 660, dur: 0.035, gain: 0.04 });
+    case 'pane':
+      tone(ctx, out, t, { type: 'triangle', f: 1760, f1: 2400, dur: 0.06, gain: 0.04 });
+      return noise(ctx, out, t, { dur: 0.08, gain: 0.04, filter: 'highpass', f: 4200 });
+    case 'crack':
+      return click(ctx, out, t, 3600, 0.12, 0.02);
+    case 'miss':
+      return tone(ctx, out, t, { type: 'square', f: 330, f1: 110, dur: 0.3, gain: 0.04, glide: 0.25 });
+    case 'point':
+      return notes(ctx, out, t, [988, 1319], 0.06, { type: 'square', dur: 0.06, gain: 0.03 });
+    case 'win':
+      return notes(ctx, out, t, [784, 988, 1175, 1568], 0.1, { type: 'triangle', dur: 0.3, gain: 0.07 });
   }
 }

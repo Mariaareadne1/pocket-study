@@ -65,4 +65,28 @@ export const CARTS: Record<CartId, CartInfo> = {
     blurb: 'Paint a small sky with stars, clouds, moons and birds. Export it as a PNG.',
     controls: 'D-pad move · A place · B erase · Select tool · Start menu',
   },
+  vine: {
+    id: 'vine',
+    number: '04',
+    title: 'Vine',
+    genre: 'Classic snake',
+    blurb: 'Steer a growing vine to the dewdrops. It gets longer and faster; don’t run into a wall or yourself.',
+    controls: 'D-pad steer · A hurry · Start pause',
+  },
+  glasshouse: {
+    id: 'glasshouse',
+    number: '05',
+    title: 'Glasshouse',
+    genre: 'Brick breaker',
+    blurb: 'Bounce a pebble off your paddle and break every coloured pane of the glasshouse roof.',
+    controls: 'D-pad move · A launch · Start pause',
+  },
+  rally: {
+    id: 'rally',
+    number: '06',
+    title: 'Rally',
+    genre: 'Paddle duel',
+    blurb: 'A table game against the console. Angle your returns and be first to seven points.',
+    controls: 'D-pad move · A serve · Select difficulty · Start pause',
+  },
 };
