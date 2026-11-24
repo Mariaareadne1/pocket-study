@@ -1,7 +1,7 @@
 /**
  * The LCD. Samples the console's 160×144 software framebuffer (a DataTexture, row 0 = top) with
  * sharp-bilinear filtering so pixels stay square at any zoom without shimmering, adds a faint
- * pixel grid that fades out when pixels get smaller than a few screen pixels, a backlight with
+ * pixel grid and R/G/B sub-pixel stripes that fade out when pixels get smaller than a few screen pixels, a backlight with
  * slight edge falloff, and the reflection of the studio in the cover glass.
  *
  * Output alpha is 2.0 ("matter, no sparkle") so the star pass never blooms game pixels.
@@ -51,6 +51,11 @@ export const SCREEN_FRAG = `
     float gap = smoothstep(0.5 - fw.x * 0.9 - 0.06, 0.5, edge);
     float gridVis = (1.0 - smoothstep(0.16, 0.42, max(fw.x, fw.y))) * uGrid;
     lcd *= 1.0 - gap * 0.34 * gridVis;
+    // Sub-pixels: each cell is three vertical R/G/B stripes, like a colour LCD seen up close. The mask
+    // averages to 1 per channel, so overall brightness and colour stay the same from a distance.
+    float sx = fract(px.x) * 3.0;
+    vec3 stripe = vec3(step(sx, 1.0), step(1.0, sx) * step(sx, 2.0), step(2.0, sx));
+    lcd *= mix(vec3(1.0), vec3(0.55) + stripe * 1.35, 0.2 * gridVis);
 
     // Backlight: slightly brighter centre, soft falloff to the edges of the panel.
     vec2 q = abs(vUv - 0.5) * 2.0;

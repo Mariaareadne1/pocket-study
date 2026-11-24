@@ -1,4 +1,4 @@
-/** Console firmware screens: the original Pocket Study boot sequence and the empty-slot screen. */
+/** Console firmware screens: the original boot sequence and the empty-slot screen. */
 import type { CartId } from '@/device/machine';
 import { type Framebuffer, mix } from './framebuffer';
 import { text, textWidth } from './font';
@@ -33,17 +33,15 @@ export function drawBoot(fb: Framebuffer, t: number, cart: CartId | null): void 
   fb.clear(PAPER);
   const cy = 52;
   mark(fb, fb.width / 2, cy, t);
-  const word = 'POCKET STUDY';
-  const shown = Math.max(0, Math.min(word.length, Math.floor((t - 0.55) / 0.045)));
-  const w = textWidth(word);
-  text(fb, word.slice(0, shown), (fb.width - w) / 2, cy + 16, INK);
-  if (t > 1.15) {
-    const k = Math.min(1, (t - 1.15) / 0.3);
-    text(fb, 'OBJECT STUDY 002', fb.width / 2, cy + 28, mix(PAPER, DIM, k), { align: 'center' });
+  // The mark alone, then a quiet model line: no product name.
+  if (t > 0.9) {
+    const k = Math.min(1, (t - 0.9) / 0.3);
+    const word = 'OS-002';
+    text(fb, word, (fb.width - textWidth(word)) / 2, cy + 18, mix(PAPER, DIM, k));
   }
   if (t > 1.55) {
     const k = Math.min(1, (t - 1.55) / 0.25);
-    const label = cart ? `CARTRIDGE ${CARTS[cart].number}  ${CARTS[cart].title.toUpperCase()}` : 'NO CARTRIDGE';
+    const label = cart ? `${CARTS[cart].number}  ${CARTS[cart].title.toUpperCase()}` : 'NO CARTRIDGE';
     fb.rect(20, 118, fb.width - 40, 1, mix(PAPER, 0xd8d2c4, k));
     text(fb, label, fb.width / 2, 124, mix(PAPER, cart ? INK : 0xb0574e, k), { align: 'center' });
   }

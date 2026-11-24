@@ -61,19 +61,19 @@ export function bezelPrint(fonts: Fonts, w: number, h: number, windowCy: number,
   const { c, g } = mmCanvas(w, h);
   g.fillStyle = 'rgba(226, 222, 236, 0.86)';
   g.textBaseline = 'middle';
-  // Under the window.
-  const below = h / 2 - (windowCy - windowH / 2) + 4.2;
-  g.font = `500 3.1px ${fonts.serif}`;
-  tracked(g, 'Pocket Study', w / 2, below, 0.25, 'center');
-  g.font = `600 1.25px ${fonts.mono}`;
-  g.fillStyle = 'rgba(226, 222, 236, 0.55)';
-  tracked(g, 'OBJECT STUDY / 002', w / 2, below + 3.2, 0.42, 'center');
+  // Under the window: hardware-style bold italic lettering, no maker name.
+  const below = h / 2 - (windowCy - windowH / 2) + 4.4;
+  g.font = `italic 800 2.3px ${fonts.sans}`;
+  tracked(g, 'COLOUR', w / 2 - 0.8, below, 0.12, 'right');
+  g.fillStyle = 'rgba(190, 172, 240, 0.92)';
+  tracked(g, 'LCD', w / 2 + 0.8, below, 0.12, 'left');
   // Fine rules either side of the window top.
+  g.fillStyle = 'rgba(226, 222, 236, 0.86)';
   g.fillRect(4, 4.2, 18, 0.16);
   g.fillRect(w - 22, 4.2, 18, 0.16);
-  g.font = `600 1.1px ${fonts.mono}`;
-  tracked(g, 'COLOUR LCD  160 × 144', w - 4, 2.7, 0.24, 'right');
-  tracked(g, 'POWER', 6.8, 2.7, 0.3, 'left');
+  g.font = `italic 700 1.2px ${fonts.sans}`;
+  tracked(g, '160 × 144 PIXELS', w - 4, 2.7, 0.14, 'right');
+  tracked(g, 'POWER', 6.8, 2.7, 0.16, 'left');
   return c;
 }
 
@@ -88,18 +88,18 @@ export function facePrint(
   const toC = ([x, y]: [number, number]): [number, number] => [x + W / 2, H / 2 - y];
   g.fillStyle = 'rgba(40, 34, 58, 0.82)';
   g.textBaseline = 'middle';
-  g.font = `700 2.6px ${fonts.sans}`;
+  g.font = `italic 800 2.8px ${fonts.sans}`;
   const [ax, ay] = toC(at.a);
   const [bx, by] = toC(at.b);
   tracked(g, 'A', ax + 1.0, ay + 9.0, 0, 'center');
   tracked(g, 'B', bx + 1.0, by + 9.0, 0, 'center');
-  g.font = `600 1.7px ${fonts.mono}`;
+  g.font = `italic 700 1.8px ${fonts.sans}`;
   for (const [label, p] of [
     ['SELECT', at.select],
     ['START', at.start],
   ] as const) {
     const [x, y] = toC(p);
-    tracked(g, label, x, y + 4.4, 0.36, 'center');
+    tracked(g, label, x, y + 4.4, 0.18, 'center');
   }
   // Tiny direction ticks round the pad.
   const [dx, dy] = toC(at.dpad);
@@ -113,9 +113,9 @@ export function facePrint(
     g.fillRect(dx + ox - w / 2, dy + oy - h / 2, w, h);
   }
   // Speaker-side wordmark, very quiet.
-  g.font = `600 1.4px ${fonts.mono}`;
+  g.font = `italic 700 1.4px ${fonts.sans}`;
   g.fillStyle = 'rgba(40, 34, 58, 0.42)';
-  tracked(g, 'PS-002', W / 2, H - 4.5, 0.5, 'center');
+  tracked(g, 'OS-002', W / 2, H - 4.5, 0.3, 'center');
   return c;
 }
 
@@ -124,7 +124,7 @@ export function switchPrint(fonts: Fonts): HTMLCanvasElement {
   const { c, g } = mmCanvas(18, 4);
   g.fillStyle = 'rgba(40, 34, 58, 0.8)';
   g.textBaseline = 'middle';
-  g.font = `700 1.5px ${fonts.mono}`;
+  g.font = `italic 800 1.5px ${fonts.sans}`;
   tracked(g, 'OFF', 1.0, 2, 0.2, 'left');
   tracked(g, 'ON', 17, 2, 0.2, 'right');
   return c;
@@ -137,10 +137,10 @@ export function backPrint(fonts: Fonts): HTMLCanvasElement {
   const { c, g } = mmCanvas(W, H);
   g.fillStyle = 'rgba(40, 34, 58, 0.78)';
   g.textBaseline = 'middle';
-  g.font = `500 3.4px ${fonts.serif}`;
-  tracked(g, 'Pocket Study', W / 2, 7, 0.2, 'center');
+  g.font = `italic 800 3.0px ${fonts.sans}`;
+  tracked(g, 'HANDHELD', W / 2, 7, 0.2, 'center');
   g.font = `600 1.5px ${fonts.mono}`;
-  const lines = ['MODEL PS-002', 'OBJECT STUDY / 002', '3.7 V  1000 mAh  LI-PO', 'CLEAR POLYCARBONATE · LAVENDER 04', 'DESIGNED AS A STUDY · NOT FOR SALE'];
+  const lines = ['MODEL OS-002', 'OBJECT STUDY / 002', '3.7 V  1000 mAh  LI-PO', 'CLEAR POLYCARBONATE · LAVENDER 04', 'DESIGNED AS A STUDY · NOT FOR SALE'];
   lines.forEach((l, i) => tracked(g, l, W / 2, 12.5 + i * 2.6, 0.3, 'center'));
   g.fillRect(W / 2 - 12, 27.8, 24, 0.15);
   g.font = `600 1.25px ${fonts.mono}`;

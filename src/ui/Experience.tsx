@@ -172,7 +172,7 @@ export default function Experience() {
       {failed && (
         <div className="ps-fail" role="alert">
           <p className="ps-kicker">Object Study / 002</p>
-          <h1>Pocket Study couldn’t be drawn.</h1>
+          <h1>The console couldn’t be drawn.</h1>
           <p>
             The console is rendered with WebGL 2, and this browser or device couldn’t start it. A recent Chrome, Safari or Firefox with
             hardware acceleration on should work.

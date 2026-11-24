@@ -104,8 +104,8 @@ export class Confirm {
 
   draw(fb: Framebuffer, th: Theme): void {
     fb.shade(0, 0, fb.width, fb.height, th.scrim, 0.6);
-    const lines = wrap(this.message, 20);
     const w = 132;
+    const lines = wrap(this.message, w - 12);
     const h = 30 + lines.length * 9;
     const x = (fb.width - w) / 2;
     const y = (fb.height - h) / 2;
@@ -121,6 +121,8 @@ export class Confirm {
   }
 }
 
+const HELP_ROW = /^(D-PAD|START|SELECT|A|B) +(\S.*)$/;
+
 /** Static help page; any button closes it. */
 export function drawHelp(fb: Framebuffer, th: Theme, title: string, lines: readonly string[]): void {
   fb.shade(0, 0, fb.width, fb.height, th.scrim, 0.6);
@@ -131,7 +133,18 @@ export function drawHelp(fb: Framebuffer, th: Theme, title: string, lines: reado
   fb.panel(x, y, w, h, th.panel, th.edge);
   text(fb, title, fb.width / 2, y + 6, th.dim, { align: 'center' });
   fb.rect(x + 6, y + 16, w - 12, 1, th.edge);
-  lines.forEach((l, i) => text(fb, l, x + 7, y + 22 + i * 10, th.ink));
+  // "A      DASH" style rows: the button name, then its action lined up in a second column.
+  const col = x + 7 + textWidth('SELECT') + 6;
+  lines.forEach((l, i) => {
+    const ly = y + 22 + i * 10;
+    const row = HELP_ROW.exec(l);
+    if (!row) {
+      text(fb, l, x + 7, ly, th.ink);
+      return;
+    }
+    text(fb, row[1], x + 7, ly, th.dim);
+    text(fb, row[2], col, ly, th.ink);
+  });
   text(fb, 'ANY BUTTON: BACK', fb.width / 2, y + h - 11, th.dim, { align: 'center' });
 }
 

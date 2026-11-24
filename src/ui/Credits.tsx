@@ -28,7 +28,7 @@ export function Credits({ controller, onClose }: Props) {
   return (
     <dialog ref={ref} className="ps-dialog" aria-labelledby="ps-credits-title">
       <p className="ps-kicker">Object Study / 002</p>
-      <h2 id="ps-credits-title">Pocket Study</h2>
+      <h2 id="ps-credits-title">Credits</h2>
       <p>
         A transparent handheld console, built in the browser with three.js. Every cartridge is an original game drawn into a
         160 × 144 framebuffer on the object’s screen.

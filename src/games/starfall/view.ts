@@ -1,6 +1,6 @@
 /** STARFALL pixel art (160×144). */
 import { type Framebuffer, type Sprite, sprite } from '@/runtime/framebuffer';
-import { text } from '@/runtime/font';
+import { text, textWidth } from '@/runtime/font';
 import type { Theme } from '../common/menu';
 import { DASH, FIELD, MAX_LIVES, PULSE, type Obj, type Player, type Run, multiplier } from './logic';
 
@@ -104,7 +104,10 @@ export function drawSparks(fb: Framebuffer, sparks: readonly Spark[]): void {
       const a = (k / 6) * Math.PI * 2;
       fb.px(s.x + 3 + Math.cos(a) * r, s.y + 3 + Math.sin(a) * r, s.age < 0.2 ? 0xffffff : C.gold);
     }
-    text(fb, s.label, s.x + 3, s.y - 6 - s.age * 16, C.gold, { align: 'center' });
+    // Keep the score pop-up on screen when a star is caught at the edge.
+    const half = textWidth(s.label) / 2;
+    const cx = Math.min(Math.max(s.x + 3, half + 1), fb.width - half - 1);
+    text(fb, s.label, cx, s.y - 6 - s.age * 16, C.gold, { align: 'center' });
   }
 }
 
@@ -130,7 +133,7 @@ export function drawHud(fb: Framebuffer, run: Run, best: number): void {
 export function drawTitle(fb: Framebuffer, t: number, best: number): void {
   drawBackdrop(fb, t);
   text(fb, 'STARFALL', fb.width / 2, 30, C.gold, { align: 'center', scale: 2, shadow: 0x3a2d6a });
-  text(fb, 'CATCH STARS, DODGE ROCKS', fb.width / 2, 54, C.dim, { align: 'center' });
+  text(fb, 'CATCH STARS, MISS ROCKS', fb.width / 2, 54, C.dim, { align: 'center' });
   fb.sprite(SHIP[Math.floor(t * 12) % 2], 74, 82 + Math.round(Math.sin(t * 2) * 2));
   fb.sprite(STAR[Math.floor(t * 4) % 2], 46, 70 + ((t * 20) % 30));
   fb.sprite(BIG, 108, 62 + ((t * 14) % 30));

@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Pocket Study — Object Study 002</title>
+        <title>Object Study 002 — Handheld</title>
         <meta
           name="description"
           content="A transparent, faintly lavender handheld console you can hold, power on and play — with three original cartridges."
