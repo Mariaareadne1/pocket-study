@@ -118,3 +118,5 @@ Each milestone is tested, committed and pushed before the next one starts.
 - Recordings no longer stop after about a second: the video size is fixed for the take, the adaptive
   resolution holds still, tab capture is asked to keep its size, and a stalled audio output means a silent
   take instead of a broken one.
+- Checks: typecheck + lint clean; 129 unit tests; E2E 11/11 on the dev server and 11/11 against the live
+  URL after deploying to https://pocket-study.vercel.app. A film frame shows only the console and the pointer.
