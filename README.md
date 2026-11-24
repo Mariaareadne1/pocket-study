@@ -59,8 +59,9 @@ levels. Each has its own label, title screen, pause menu, save and reset, and so
   the Record button while recording.
 - **Record demo** (bottom of the page) films what you do, with the console's sound, and downloads an
   `.mp4` (or `.webm`). In Chrome, Edge and Firefox it records this tab — choose "this tab" when asked.
-  Files are named `handheld-demo-<date>-<time>`. The button hides itself before the first recorded frame, so it never appears in the film; press **R** or
-  your browser's **Stop sharing** to finish. Browsers without screen capture (phones) record the 3D scene
+  Files are named `handheld-demo-<date>-<time>`. Everything but the console hides itself before the first recorded frame (the button,
+  headings, cartridge card, tray and key guide), and your mouse is drawn as a pointer so it shows in the film; press **R** or
+  your browser's **Stop sharing** to finish. Browsers without screen capture, or that block it (phones, embedded browsers such as the Claude app's), record the 3D scene
   instead, with an on-screen Stop button that isn't part of that recording.
 - **Photo** saves `handheld.png` of the object. **Credits** has attribution and **Clear saved data…** (asks first).
 - Drag empty space to turn the console; **Reset view** puts it back. Reduced motion is respected.
@@ -79,8 +80,8 @@ Open <http://localhost:5580>. Production: `npm run build && npm start` (port 458
 
 | Script | |
 | --- | --- |
-| `npm test` | 125 unit tests (device machine, input, runtime, all six games, text fit on every screen, key guide, PNG export, recorder) |
-| `npm run test:e2e` | 10 Playwright tests in GPU Chrome with real pointer and keyboard input, including Record demo, one-cartridge mode and the key guide (`E2E_BASE_URL=…` to target a deployment) |
+| `npm test` | 129 unit tests (device machine, input, runtime, all six games, text fit on every screen, key guide, PNG export, recorder) |
+| `npm run test:e2e` | 11 Playwright tests in GPU Chrome with real pointer and keyboard input, including Record demo, one-cartridge mode and the key guide (`E2E_BASE_URL=…` to target a deployment) |
 | `npm run typecheck` · `npm run lint` | |
 | `node scripts/shoot.mjs` | visual QA stills of states and angles |
 | `node scripts/film.mjs --variant=landscape` | record a demo film (also `portrait`) |

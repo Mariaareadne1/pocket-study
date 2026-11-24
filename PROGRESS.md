@@ -106,3 +106,15 @@ Each milestone is tested, committed and pushed before the next one starts.
 - Checks: typecheck + lint clean; 125 unit tests; E2E 9/9 on the dev server and on the production build (1.0 min); `next build` clean.
   Deployed to https://pocket-study.vercel.app; E2E 10/10 against the production build and the live URL.
   Not yet done: refreshed demo films and hero image (they show the old name and font).
+
+### Milestone 9 — 2026-11-24
+
+- Record demo works in browsers that block tab capture (the Claude app's built-in browser refused it with
+  no prompt, which showed "Recording cancelled."): a refusal that quick, or by policy, records the 3D scene
+  instead and remembers that for the next take.
+- While a tab recording runs, everything but the console is hidden (heading, buttons, card, tray, key
+  guide, toasts), and the mouse is drawn as a pointer (arrow, with a ring while pressed); scene recordings
+  draw the same pointer into the film.
+- Recordings no longer stop after about a second: the video size is fixed for the take, the adaptive
+  resolution holds still, tab capture is asked to keep its size, and a stalled audio output means a silent
+  take instead of a broken one.

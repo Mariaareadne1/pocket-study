@@ -72,13 +72,28 @@ Every action is a real browser input event (`page.mouse`, `page.keyboard`, DOM b
 Runs in full Chromium (the lightweight headless shell has no screen capture) with
 `--auto-accept-this-tab-capture`, so the "share this tab" prompt is accepted without a person.
 
-1. **Tab recording** — a real click on **Record demo**, the countdown, then the whole control is gone from
-   the page; Bloom is inserted and switched on with real clicks; **R** stops. The downloaded file is
-   checked with ffprobe, then frames sampled at 4 fps are scanned for the button's red dot where the
-   button sits: 0 pixels. The same detector finds it in a screenshot taken before recording (control).
+1. **Tab recording** — Bloom is inserted and switched on with real clicks, then a real click on **Record
+   demo** and the countdown; the whole control, the heading, the view/sound buttons, the cartridge card,
+   the tray and the key guide are hidden for the take and come back after it, and the mouse is drawn as a
+   pointer (tab capture leaves the system cursor out). **R** stops. The downloaded file is checked with
+   ffprobe (more than 2 s), then frames sampled at 4 fps are scanned for the button's red dot where the
+   button sits: 0 pixels (the same detector finds it in a screenshot taken before recording, as a
+   control), and for the pointer's dark arrow where the test parked the mouse: found.
 2. **Canvas recording** (`?rec=canvas`, the fallback for browsers without screen capture) — the Stop
-   button stays on screen and is absent from the film.
-3. **Cancel** — refusing the share prompt shows "Recording cancelled." and the button works again.
+   button stays on screen and is absent from the film; the pointer is drawn into the film.
+3. **Cancel** — a person refusing the share prompt (after 1.5 s) shows "Recording cancelled." and the
+   button works again.
+4. **Blocked** — a refusal with no prompt (the Claude app's built-in browser refuses tab capture in about
+   150 ms) switches to recording the 3D scene: Stop appears, a playable file downloads, and the next take
+   goes straight to the scene without asking for the tab again. Checked by hand in that browser too: a
+   26 s mp4 with the console visibly switching on.
+
+While writing these, every film came out about 1 s long: this Mac's audio output had stalled (the Web
+Audio clock reported "running" but moved 0.006 s in 1.5 s), so the soundtrack carried no samples and the
+recorder waited on it. The recorder now watches the audio clock for 0.3 s in the last second of the
+countdown and, if it isn't moving, records without sound and says so (unit-tested in `tests/unit/recording.test.ts`). The video size
+is also fixed for the whole take (an mp4 stops if it changes), and the console's adaptive resolution holds
+still while recording.
 
 A manual tab recording at 1280 × 720 came out as H.264 + AAC (`.mp4`), with Rally being played and no
 Record control in any frame.
