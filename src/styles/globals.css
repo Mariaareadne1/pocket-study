@@ -183,6 +183,18 @@ a { color: var(--lav-ink); text-underline-offset: 2px; }
 }
 .ps-keys kbd[data-wide] { font-size: 10px; }
 
+/* ── recording: only the console in the film ── */
+html[data-recording] .ps-mast, html[data-recording] .ps-actions, html[data-recording] .ps-card, html[data-recording] .ps-tray,
+html[data-recording] .ps-keys, html[data-recording] .ps-toast { visibility: hidden !important; }
+/* Tab capture leaves out the system cursor: hide it and draw one into the page instead. */
+html[data-recording], html[data-recording] * { cursor: none !important; }
+.ps-pointer { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; will-change: transform; }
+.ps-pointer[data-show='false'] { display: none; }
+.ps-pointer svg { position: absolute; left: -1px; top: -1px; overflow: visible; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.25)); }
+.ps-pointer path { fill: #1c1b22; stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.ps-pointer i { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; background: rgba(91, 74, 156, 0.25); transform: scale(0); transition: transform 90ms ease-out; }
+.ps-pointer[data-down='true'] i { transform: scale(1); }
+
 /* ── failure ───────────────────────────── */
 .ps-fail { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); }
 .ps-fail h1 { margin: 0 0 10px; font: 400 34px/1.05 var(--serif); }
