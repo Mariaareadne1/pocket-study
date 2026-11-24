@@ -128,6 +128,11 @@ export class AudioEngine {
     };
   }
 
+  /** The audio context's own clock in seconds, or null before audio has started. */
+  get contextTime(): number | null {
+    return this.ctx ? this.ctx.currentTime : null;
+  }
+
   /** A live copy of everything the console plays (after mute and volume), for recording demos. */
   recordingStream(): MediaStream | null {
     if (!this.ctx || !this.out || typeof this.ctx.createMediaStreamDestination !== 'function') return null;

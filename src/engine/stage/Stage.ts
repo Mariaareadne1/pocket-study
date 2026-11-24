@@ -128,6 +128,10 @@ export class Stage {
   private only: OnShow = null;
   /** Eases the camera onto the console alone when no cartridges are on show (0 → 1). */
   private bare: [number, number] = [0, 0];
+  /** Runs right after each frame is drawn, while the drawing buffer still holds it (demo recording). */
+  afterFrame: (() => void) | null = null;
+  /** While true the adaptive resolution probe holds still (a recording's size must not change). */
+  holdResolution = false;
 
   constructor(container: HTMLElement, handlers: StageHandlers, opts: StageOptions) {
     this.handlers = handlers;
@@ -206,6 +210,7 @@ export class Stage {
   advance(dt: number): void {
     this.handlers.tick?.(dt);
     this.renderFrame(dt);
+    this.afterFrame?.();
   }
 
   /** Show one cartridge, none ('none') or all of them (null). A cartridge in use always stays. */
@@ -306,6 +311,7 @@ export class Stage {
     const dt = Math.min(gap, 1 / 20);
     this.handlers.tick?.(dt);
     this.renderFrame(dt);
+    this.afterFrame?.();
     this.probe(gap);
   };
 
@@ -492,7 +498,7 @@ export class Stage {
   }
 
   private probe(gap: number): void {
-    if (!this.dprProbe || document.hidden || gap > 0.1) return;
+    if (!this.dprProbe || this.holdResolution || document.hidden || gap > 0.1) return;
     this.frameStats.gaps.push(gap);
     if (this.frameStats.gaps.length < 120) return;
     const gaps = this.frameStats.gaps.sort((a, b) => a - b);
