@@ -107,7 +107,8 @@ test('insert, power, play, block, eject, export, persist, clear', async ({ page 
 
   await ready(page, '?seed=7');
   await expect(page.getByText('Object Study / 002', { exact: false }).first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Pocket Study' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Handheld console' })).toBeAttached();
+  await expect(page.getByText('Pocket Study')).toHaveCount(0);
   // Off: nothing is drawn on the screen.
   expect((await state(page)).fbLit).toBe(0);
 

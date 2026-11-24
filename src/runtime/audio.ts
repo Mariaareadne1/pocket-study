@@ -28,6 +28,8 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private speaker: GainNode | null = null;
   private hardware: GainNode | null = null;
+  private out: AudioNode | null = null;
+  private tap: MediaStreamAudioDestinationNode | null = null;
   private ends: number[] = [];
   private stats = { played: 0, dropped: 0 };
   muted = false;
@@ -50,7 +52,8 @@ export class AudioEngine {
       } catch {
         return;
       }
-      const { master, speaker, hardware } = buildGraph(this.ctx, this.ctx.destination);
+      const { master, speaker, hardware, out } = buildGraph(this.ctx, this.ctx.destination);
+      this.out = out;
       this.master = master;
       this.speaker = speaker;
       this.hardware = hardware;
@@ -125,6 +128,23 @@ export class AudioEngine {
     };
   }
 
+  /** A live copy of everything the console plays (after mute and volume), for recording demos. */
+  recordingStream(): MediaStream | null {
+    if (!this.ctx || !this.out || typeof this.ctx.createMediaStreamDestination !== 'function') return null;
+    if (!this.tap) {
+      this.tap = this.ctx.createMediaStreamDestination();
+      this.out.connect(this.tap);
+    }
+    return this.tap.stream;
+  }
+
+  releaseRecording(): void {
+    if (!this.tap) return;
+    this.out?.disconnect(this.tap);
+    this.tap.stream.getTracks().forEach((t) => t.stop());
+    this.tap = null;
+  }
+
   /** Suspends the context while the tab is hidden. */
   suspend(hidden: boolean): void {
     if (!this.ctx) return;
@@ -135,11 +155,12 @@ export class AudioEngine {
   dispose(): void {
     void this.ctx?.close().catch(() => undefined);
     this.ctx = null;
-    this.master = this.speaker = this.hardware = null;
+    this.master = this.speaker = this.hardware = this.out = null;
+    this.tap = null;
   }
 }
 
-function buildGraph(ctx: BaseAudioContext, dest: AudioNode): { master: GainNode; speaker: GainNode; hardware: GainNode } {
+function buildGraph(ctx: BaseAudioContext, dest: AudioNode): { master: GainNode; speaker: GainNode; hardware: GainNode; out: AudioNode } {
   const limiter = ctx.createDynamicsCompressor();
   limiter.threshold.value = -10;
   limiter.knee.value = 8;
@@ -155,7 +176,7 @@ function buildGraph(ctx: BaseAudioContext, dest: AudioNode): { master: GainNode;
   const hardware = ctx.createGain();
   hardware.gain.value = 1;
   hardware.connect(master);
-  return { master, speaker, hardware };
+  return { master, speaker, hardware, out: limiter };
 }
 
 /** Renders a logged session offline (film soundtrack). Returns 16-bit stereo WAV bytes. */

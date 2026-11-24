@@ -1,4 +1,5 @@
-/* Pocket Study — editorial and quiet; the object is the page. */
+/* Object Study 002 — editorial and quiet; the object is the page. */
+.ps-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 :root {
   --paper: #fbfaf9;
   --ink: #1c1b22;
@@ -84,7 +85,7 @@ a { color: var(--lav-ink); text-underline-offset: 2px; }
 .ps-card-actions { display: flex; gap: 6px; margin-top: 12px; }
 
 /* ── tray chips ────────────────────────── */
-.ps-tray { position: absolute; right: var(--gutter); bottom: var(--gutter); display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 2 * var(--gutter) - 340px); }
+.ps-tray { position: absolute; right: var(--gutter); bottom: var(--gutter); display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: min(calc(100vw - 2 * var(--gutter) - 340px), calc(50vw - var(--gutter) - 84px)); }
 .ps-chip {
   height: 32px; padding: 0 12px; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer;
   font: 500 12px var(--sans); color: var(--ink-2); transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
@@ -93,6 +94,31 @@ a { color: var(--lav-ink); text-underline-offset: 2px; }
 .ps-chip:hover { color: var(--ink); border-color: var(--rule); }
 .ps-chip[aria-pressed='true'] { color: var(--ink); border-color: var(--rule-strong); background: var(--glass); }
 .ps-chip-quiet { color: var(--ink-3); }
+
+/* ── record demo ───────────────────────── */
+.ps-rec { position: absolute; left: 50%; bottom: var(--gutter); transform: translateX(-50%); z-index: 5; display: flex; justify-content: center; }
+.ps-rec { gap: 6px; }
+.ps-rec .ps-pill { display: inline-flex; align-items: center; gap: 8px; }
+.ps-show { position: relative; padding: 0; }
+.ps-show select {
+  appearance: none; -webkit-appearance: none; height: 100%; padding: 0 30px 0 14px; border: 0; border-radius: inherit; background: transparent;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.ps-show::after {
+  content: ''; position: absolute; right: 13px; top: 50%; width: 6px; height: 6px; margin-top: -5px; pointer-events: none;
+  border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg);
+}
+.ps-show:focus-within { outline: 2px solid var(--focus); outline-offset: 3px; }
+.ps-show select:focus-visible { outline: none; }
+.ps-rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #d4475c; box-shadow: 0 0 0 3px rgba(212, 71, 92, 0.16); }
+.ps-pill-rec { background: var(--ink); color: var(--paper); border-color: var(--ink); font-variant-numeric: tabular-nums; }
+.ps-pill-rec:hover { background: #2e2c38; }
+.ps-pill-rec i { width: 8px; height: 8px; border-radius: 50%; background: #ff5d73; animation: ps-blink 1.2s infinite; }
+.ps-rec-count {
+  display: flex; align-items: center; gap: 12px; margin: 0; padding: 8px 16px 8px 8px; max-width: min(440px, calc(100vw - 32px));
+  border-radius: var(--radius); background: var(--ink); color: var(--paper); font: 500 12px/1.35 var(--sans);
+}
+.ps-rec-count b { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #d4475c; font: 600 15px var(--mono); }
 
 /* ── toast ─────────────────────────────── */
 .ps-toast {
@@ -138,6 +164,25 @@ a { color: var(--lav-ink); text-underline-offset: 2px; }
 .ps-row-end { justify-content: flex-end; margin-top: 22px; }
 .ps-confirm { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #faf3f3; border: 1px solid rgba(154, 61, 61, 0.25); }
 
+/* ── key guide ─────────────────────────── */
+.ps-keys {
+  position: absolute; right: var(--gutter); top: 50%; transform: translateY(-50%); width: max-content; max-width: 280px; padding: 12px 14px;
+  border: 1px solid var(--rule); border-radius: 16px; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  pointer-events: none; animation: ps-keys-in var(--t) var(--ease-out);
+}
+@keyframes ps-keys-in { from { opacity: 0; transform: translate(8px, -50%); } }
+.ps-keys-head { margin: 0 0 8px; font: 500 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.ps-keys dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; align-items: center; gap: 6px 12px; }
+.ps-keys-row { display: contents; }
+.ps-keys dt { display: flex; gap: 3px; }
+.ps-keys dd { margin: 0; font: 500 12px/1.25 var(--sans); color: var(--ink-2); }
+.ps-keys kbd {
+  display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 5px;
+  border: 1px solid var(--rule-strong); border-bottom-width: 2px; background: #fff; color: var(--ink);
+  font: 600 11px/1 var(--mono);
+}
+.ps-keys kbd[data-wide] { font-size: 10px; }
+
 /* ── failure ───────────────────────────── */
 .ps-fail { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); }
 .ps-fail h1 { margin: 0 0 10px; font: 400 34px/1.05 var(--serif); }
@@ -156,6 +201,20 @@ a { color: var(--lav-ink); text-underline-offset: 2px; }
   .ps-card-title { font-size: 20px; margin-bottom: 0; }
   .ps-card-actions { position: absolute; right: 10px; bottom: 10px; margin: 0; }
   .ps-card-actions .ps-pill { height: 30px; padding: 0 10px; font-size: 11px; }
-  .ps-tray { left: var(--gutter); right: auto; bottom: calc(var(--gutter) + 44px); max-width: none; justify-content: flex-start; }
+  .ps-tray {
+    left: 0; right: 0; bottom: calc(var(--gutter) + 82px); max-width: none; justify-content: flex-start; flex-wrap: nowrap;
+    overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .ps-tray::-webkit-scrollbar { display: none; }
+  .ps-chip { flex: none; padding: 0 10px; }
+  .ps-rec { left: var(--gutter); transform: none; bottom: calc(var(--gutter) + 44px); }
+  .ps-rec .ps-pill { height: 30px; padding: 0 10px; font-size: 11px; }
+  .ps-rec .ps-show { padding: 0; }
+  .ps-show select { padding: 0 24px 0 10px; }
+  .ps-show::after { right: 10px; }
+  .ps-rec-long { display: none; }
+  .ps-actions { flex-wrap: nowrap; gap: 4px; }
+  .ps-actions .ps-pill { padding: 0 8px; }
   .ps[data-touch] .ps-actions, .ps[data-touch] .ps-tray { display: none; }
+  .ps-keys { display: none; }
 }
