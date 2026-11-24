@@ -11,8 +11,8 @@ Each milestone is tested, committed and pushed before the next one starts.
 | 4 | UI, mobile, accessibility, E2E | done | `npm run test:e2e`: 3 tests (see log for run history); 390×844 stills |
 | 5 | Demo films + media | done | `demo/ffprobe.json`: both 22.00 s, h264 yuv420p 30 fps, AAC; poster, contact sheet, 12 stills, GIF |
 | 6 | Docs, deploy, handoff | done | https://pocket-study.vercel.app — E2E 3/3 against the live URL |
-| 7 | Three classic-genre cartridges + Record demo | done | 112 unit tests; E2E 6/6 on dev and production builds; recorded file checked with ffprobe and scanned for the button |
-| 8 | Unbranded console, pixel font, key guide, one-cartridge and no-cartridge demo modes | built, not committed | 125 unit tests (incl. text fit on every screen); E2E 10/10 on dev (9/9 on the production build before the no-cartridge option) |
+| 7 | Three classic-genre cartridges + Record demo | done, deployed 2026-11-24 | 112 unit tests; E2E 6/6 on dev and production builds; recorded file checked with ffprobe and scanned for the button |
+| 8 | Unbranded console, pixel font, key guide, one-cartridge and no-cartridge demo modes | done, deployed 2026-11-24 | 125 unit tests (incl. text fit on every screen); E2E 10/10 on dev, production build and the live URL |
 
 ## Log
 
@@ -86,7 +86,7 @@ Each milestone is tested, committed and pushed before the next one starts.
   before the first recorded frame.
 - Checks: typecheck + lint clean; 112 unit tests; E2E 6/6; QA stills at 1440 × 900, 1280 × 720,
   540 × 960 and 390 × 844. `next build` clean; E2E 6/6 against the production build (48 s).
-  Not yet done: deploy, refreshed demo films (the committed films still show three cartridges).
+  Deployed with milestone 8 on 2026-11-24. The committed films still show three cartridges.
 
 ### Milestone 8 — 2026-11-24
 
@@ -104,4 +104,5 @@ Each milestone is tested, committed and pushed before the next one starts.
 - "No cartridges" (`?only=none`): every cartridge slides out and the camera centres the console alone.
   On phones the Record row now sits on its own line above the view/sound buttons (they overlapped).
 - Checks: typecheck + lint clean; 125 unit tests; E2E 9/9 on the dev server and on the production build (1.0 min); `next build` clean.
-  Not yet done: commit, deploy, refreshed demo films and hero image (they show the old name and font).
+  Deployed to https://pocket-study.vercel.app; E2E 10/10 against the production build and the live URL.
+  Not yet done: refreshed demo films and hero image (they show the old name and font).

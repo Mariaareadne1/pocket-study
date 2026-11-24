@@ -87,6 +87,8 @@ Record control in any frame.
 
 | Target | Result |
 | --- | --- |
+| live (`https://pocket-study.vercel.app`), 2026-11-24 deploy | 10 passed (1.1 min) |
+| production build (`localhost:4580`), plus the No cartridges option | 10 passed (1.1 min) |
 | dev server (`localhost:5580`), plus the No cartridges option | 10 passed (1.3 min) |
 | dev server (`localhost:5580`), new font + key guide + one-cartridge mode | 9 passed (1.2 min) |
 | production build (`localhost:4580`), new font + key guide + one-cartridge mode | 9 passed (1.0 min) |
